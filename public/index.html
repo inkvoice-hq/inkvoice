@@ -2247,7 +2247,7 @@ function generateInvoiceText(){
       };
       text=templates[tone]||templates.professional;
     } else if(type==='payment reminder'){
-      text=`Hi [Client Name],\n\nI hope this finds you well. I'm following up on the invoice for: ${desc}.\n\nYour invoice of [Amount] is now ${tone==='friendly'?'gently knocking at the door':'due for payment'}. If you've already processed this, please disregard — and thank you!\n\nIf not, I'd greatly appreciate payment at your earliest convenience. Feel free to reach out if anything is unclear.\n\n${tone==='friendly'?'Warm regards,':'Best,'\n\n}${DB.settings.bizName||'[Your Name]'}`;
+      text=`Hi [Client Name],\n\nI hope this finds you well. I'm following up on the invoice for: ${desc}.\n\nYour invoice of [Amount] is now ${tone==='friendly'?'gently knocking at the door':'due for payment'}. If you've already processed this, please disregard — and thank you!\n\nIf not, I'd greatly appreciate payment at your earliest convenience. Feel free to reach out if anything is unclear.\n\n${tone==='friendly'?'Warm regards,':'Best,'}\n\n${DB.settings.bizName||'[Your Name]'}`;
     } else if(type==='thank you note'){
       text=`Thank you so much for choosing ${DB.settings.bizName||'us'} for ${desc}. It's been a genuine pleasure working with you on this project, and I'm proud of what we created together.\n\nI look forward to working together again soon. Don't hesitate to reach out whenever you need creative support!`;
     } else {
