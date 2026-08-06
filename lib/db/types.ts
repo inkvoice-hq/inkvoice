@@ -96,3 +96,34 @@ export interface Subscription {
 export type ClientInput = Omit<Client, "id" | "tenant_id" | "created_at" | "updated_at">;
 export type ProductInput = Omit<Product, "id" | "tenant_id" | "created_at">;
 export type InvoiceInput = Omit<Invoice, "id" | "tenant_id" | "created_at" | "updated_at">;
+
+export interface InvoiceFormInput {
+  client_id: string | null;
+  number: string;
+  issue_date: string | null;
+  due_date: string | null;
+  paid_date: string | null;
+  description: string | null;
+  status: string;
+  tax_rate: number;
+  discount: number;
+  notes: string | null;
+  recurring: string | null;
+  items: InvoiceItem[];
+}
+
+export interface TenantSettingsInput {
+  name: string;
+  email: string | null;
+  phone: string | null;
+  address: string | null;
+  website: string | null;
+  tax_reg: string | null;
+  business_type: string;
+  currency: string;
+  payment_terms: number;
+  default_tax_rate: number;
+  next_invoice_number: number;
+  invoice_notes: string | null;
+  footer_message: string | null;
+}

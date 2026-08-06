@@ -1,32 +1,70 @@
+import Link from "next/link";
 import { requireTenant } from "@/lib/db/context";
 import { listClients } from "@/lib/db/clients";
-import { logOut } from "@/lib/auth/actions";
 
-export default async function AppPage() {
-  const { email, tenantId } = await requireTenant();
+export default async function DashboardPage() {
+  const { email } = await requireTenant();
   const clients = await listClients();
 
   return (
-    <div style={{ minHeight: "100vh", background: "#0a0a0d", color: "#f0f0f8", padding: 40, fontFamily: "system-ui" }}>
-      <div style={{ maxWidth: 720, margin: "0 auto" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 32 }}>
-          <h1 style={{ fontSize: 24 }}>Stack verified</h1>
-          <form action={logOut}>
-            <button style={{ padding: "10px 18px", background: "rgba(255,255,255,0.08)", border: "none", borderRadius: 8, color: "#fff", cursor: "pointer" }}>
-              Log out
-            </button>
-          </form>
+    <>
+      <div style={topbar}>
+        <div style={{ fontSize: 18, fontWeight: 700, letterSpacing: "-0.3px" }}>Dashboard</div>
+      </div>
+      <div style={{ padding: 32 }}>
+        <div style={{ marginBottom: 28 }}>
+          <h1 style={{ fontFamily: "'Instrument Serif', serif", fontSize: 34, fontWeight: 400, margin: "0 0 6px" }}>
+            Welcome back
+          </h1>
+          <p style={{ color: "#9898b8", fontSize: 14, margin: 0 }}>{email}</p>
         </div>
 
-        <div style={{ background: "#111116", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 14, padding: 24, lineHeight: 1.9 }}>
-          <p><strong>Logged in as:</strong> {email}</p>
-          <p><strong>Your tenant id:</strong> <code style={{ color: "#4fffb0" }}>{tenantId}</code></p>
-          <p><strong>Clients in your workspace:</strong> {clients.length}</p>
-          <p style={{ color: "#9898b8", marginTop: 16, fontSize: 14 }}>
-            If this shows your email, a tenant id, and 0 clients, every layer is working.
-          </p>
+        <div style={statRow}>
+          <Link href="/app/clients" style={{ textDecoration: "none" }}>
+            <div style={statCard}>
+              <div style={statLabel}>CLIENTS</div>
+              <div style={statVal}>{clients.length}</div>
+              <div style={statSub}>Manage your clients →</div>
+            </div>
+          </Link>
+          <Link href="/app/invoices" style={{ textDecoration: "none" }}>
+            <div style={statCard}>
+              <div style={statLabel}>INVOICES</div>
+              <div style={statVal}>—</div>
+              <div style={statSub}>Coming next →</div>
+            </div>
+          </Link>
+          <Link href="/app/products" style={{ textDecoration: "none" }}>
+            <div style={statCard}>
+              <div style={statLabel}>PRODUCTS</div>
+              <div style={statVal}>—</div>
+              <div style={statSub}>Coming soon →</div>
+            </div>
+          </Link>
         </div>
+
+        <p style={{ color: "#6e6e88", fontSize: 13, marginTop: 28, lineHeight: 1.7, maxWidth: 560 }}>
+          Your account and data are live and database-backed. Clients is fully working — add,
+          edit, and delete clients and they persist to your account. Invoices, Products, and the
+          full dashboard come next.
+        </p>
       </div>
-    </div>
+    </>
   );
 }
+
+const topbar: React.CSSProperties = {
+  position: "sticky", top: 0, zIndex: 40, background: "rgba(10,10,13,0.85)",
+  backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(255,255,255,0.07)",
+  padding: "0 32px", height: 60, display: "flex", alignItems: "center",
+};
+const statRow: React.CSSProperties = { display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14, maxWidth: 720 };
+const statCard: React.CSSProperties = {
+  background: "#111116", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 16, padding: 20,
+};
+const statLabel: React.CSSProperties = {
+  fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: "#6e6e88",
+  textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 8,
+};
+const statVal: React.CSSProperties = { fontFamily: "'Instrument Serif', serif", fontSize: 30, lineHeight: 1, color: "#f0f0f8" };
+const statSub: React.CSSProperties = { fontSize: 11, color: "#4fffb0", marginTop: 8 };
