@@ -31,22 +31,20 @@ export default async function DashboardPage() {
             <div style={statCard}>
               <div style={statLabel}>INVOICES</div>
               <div style={statVal}>—</div>
-              <div style={statSub}>Coming next →</div>
+              <div style={statSub}>Manage invoices →</div>
             </div>
           </Link>
           <Link href="/app/products" style={{ textDecoration: "none" }}>
             <div style={statCard}>
               <div style={statLabel}>PRODUCTS</div>
               <div style={statVal}>—</div>
-              <div style={statSub}>Coming soon →</div>
+              <div style={statSub}>Manage services →</div>
             </div>
           </Link>
         </div>
 
         <p style={{ color: "#6e6e88", fontSize: 13, marginTop: 28, lineHeight: 1.7, maxWidth: 560 }}>
-          Your account and data are live and database-backed. Clients is fully working — add,
-          edit, and delete clients and they persist to your account. Invoices, Products, and the
-          full dashboard come next.
+          Everything is live and database-backed. Create clients, save your services, and send invoices — it all syncs to your account.
         </p>
       </div>
     </>
