@@ -1,12 +1,12 @@
 import { LegalPage } from "@/components/LegalPage";
 
-export const metadata = { title: "Privacy Policy — Inkvoice" };
+export const metadata = { title: "Privacy Policy — Zarbill" };
 
 export default function Privacy() {
   return (
     <LegalPage title="Privacy Policy" updated="12 August 2026">
       <p>
-        This policy explains what information Inkvoice collects, why, and what rights you have
+        This policy explains what information Zarbill collects, why, and what rights you have
         over it. We follow the Protection of Personal Information Act (POPIA).
       </p>
 
@@ -64,7 +64,7 @@ export default function Privacy() {
       </ul>
       <p>
         To exercise any of these, email{" "}
-        <a href="mailto:support@inkvoice.app">support@inkvoice.app</a>. We respond within
+        <a href="mailto:support@zarbill.app">support@zarbill.app</a>. We respond within
         30 days.
       </p>
 
@@ -82,7 +82,7 @@ export default function Privacy() {
 
       <h2>Contact</h2>
       <p>
-        <a href="mailto:support@inkvoice.app">support@inkvoice.app</a>
+        <a href="mailto:support@zarbill.app">support@zarbill.app</a>
       </p>
     </LegalPage>
   );

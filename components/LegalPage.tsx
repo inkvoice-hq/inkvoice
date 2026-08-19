@@ -10,7 +10,7 @@ export function LegalPage({ title, updated, children }: {
       <div className="lg">
         <header className="lg-nav">
           <Link href="/" className="lg-brand">
-            <span className="lg-mark">I</span><span>Inkvoice</span>
+            <span className="lg-mark">I</span><span>Zarbill</span>
           </Link>
           <Link href="/login" className="lg-signin">Sign in</Link>
         </header>
@@ -26,7 +26,7 @@ export function LegalPage({ title, updated, children }: {
             <Link href="/privacy">Privacy</Link>
             <Link href="/refund-policy">Refunds</Link>
           </nav>
-          <p>© {new Date().getFullYear()} Inkvoice. Cape Town, South Africa.</p>
+          <p>© {new Date().getFullYear()} Zarbill. Cape Town, South Africa.</p>
         </footer>
       </div>
     </>

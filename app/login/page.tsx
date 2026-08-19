@@ -28,7 +28,7 @@ export default function LoginPage() {
       <div style={styles.card}>
         <div style={styles.brand}>
           <div style={styles.brandIcon}>I</div>
-          <span style={styles.brandName}>Inkvoice</span>
+          <span style={styles.brandName}>Zarbill</span>
         </div>
 
         <h1 style={styles.h1}>{mode === "signup" ? "Create your account" : "Welcome back"}</h1>

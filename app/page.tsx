@@ -1,9 +1,9 @@
 import Link from "next/link";
 
 export const metadata = {
-  title: "Inkvoice — Invoicing for freelancers and small studios",
+  title: "Zarbill — Invoicing for freelancers and small studios",
   description:
-    "Create professional invoices, track who owes you, and get paid. Built for South African freelancers, creators and small studios. From R350/month.",
+    "Create professional invoices, track who owes you, and get paid. Built for South African freelancers, creators and small studios. From R99/month.",
 };
 
 export default function Landing() {
@@ -19,7 +19,7 @@ export default function Landing() {
         <header className="lp-nav">
           <div className="lp-brand">
             <span className="lp-mark">I</span>
-            <span className="lp-name">Inkvoice</span>
+            <span className="lp-name">Zarbill</span>
           </div>
           <nav className="lp-links">
             <a href="#how">How it works</a>
@@ -30,13 +30,13 @@ export default function Landing() {
 
         <section className="lp-hero">
           <div className="lp-hero-copy">
-            <p className="lp-eyebrow">For freelancers, creators &amp; small studios</p>
+            <p className="lp-eyebrow">For South African freelancers &amp; small businesses</p>
             <h1>
               Send the invoice.<br />
               <em>Then get paid.</em>
             </h1>
             <p className="lp-sub">
-              Inkvoice turns your work into a professional invoice in under a minute —
+              Zarbill turns your work into a professional invoice in under a minute —
               then keeps track of who has paid, who hasn&apos;t, and who is overdue.
               No spreadsheets. No forgotten follow-ups.
             </p>
@@ -161,8 +161,8 @@ export default function Landing() {
             <div className="lp-plan lp-plan-featured">
               <div className="lp-plan-tag">Most popular</div>
               <div className="lp-plan-name">Pro</div>
-              <div className="lp-plan-price">R350<span>/month</span></div>
-              <p className="lp-plan-alt">or $25/month billed in USD</p>
+              <div className="lp-plan-price">R99<span>/month</span></div>
+              <p className="lp-plan-alt">or $18/month billed in USD</p>
               <ul>
                 <li>Unlimited clients</li>
                 <li>Unlimited invoices</li>
@@ -175,8 +175,8 @@ export default function Landing() {
 
             <div className="lp-plan">
               <div className="lp-plan-name">Business</div>
-              <div className="lp-plan-price">R1 300<span>/month</span></div>
-              <p className="lp-plan-alt">or $69/month billed in USD</p>
+              <div className="lp-plan-price">R699<span>/month</span></div>
+              <p className="lp-plan-alt">or $39/month billed in USD</p>
               <ul>
                 <li>Everything in Pro</li>
                 <li>Team members (coming soon)</li>
@@ -200,7 +200,7 @@ export default function Landing() {
         <footer className="lp-footer">
           <div className="lp-foot-brand">
             <span className="lp-mark">I</span>
-            <span>Inkvoice</span>
+            <span>Zarbill</span>
           </div>
           <nav className="lp-foot-links">
             <Link href="/terms">Terms of Service</Link>
@@ -209,7 +209,7 @@ export default function Landing() {
             <Link href="/login">Sign in</Link>
           </nav>
           <p className="lp-foot-note">
-            © {new Date().getFullYear()} Inkvoice. Invoicing software for independent
+            © {new Date().getFullYear()} Zarbill. Invoicing software for independent
             businesses. Built in Cape Town, South Africa.
           </p>
         </footer>

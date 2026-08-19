@@ -31,8 +31,8 @@ export function UpgradeView({
 
   const price = (p: "pro" | "business") =>
     currency === "ZAR"
-      ? (p === "pro" ? "R350" : "R1,300")
-      : (p === "pro" ? "$25" : "$69");
+      ? (p === "pro" ? "R99" : "R699")
+      : (p === "pro" ? "$18" : "$39");
 
   return (
     <>
@@ -44,7 +44,7 @@ export function UpgradeView({
           <div className="ink-current">
             <div className="ink-badge-pro">{plan.toUpperCase()} PLAN — ACTIVE</div>
             <h2>You&apos;re all set.</h2>
-            <p>Unlimited clients and invoices, plus everything Inkvoice offers. Thank you for being a customer.</p>
+            <p>Unlimited clients and invoices, plus everything Zarbill offers. Thank you for being a customer.</p>
           </div>
         ) : (
           <>

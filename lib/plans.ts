@@ -12,8 +12,8 @@ export const PLAN_LIMITS: Record<PlanId, PlanLimits> = {
 };
 
 export const PLAN_PRICING = {
-  pro: { ZAR: 35000, USD: 2500 },
-  business: { ZAR: 130000, USD: 6900 },
+  pro: { ZAR: 9900, USD: 1800 },
+  business: { ZAR: 69900, USD: 3900 },
 } as const;
 
 export function planLimits(plan: string | null | undefined): PlanLimits {

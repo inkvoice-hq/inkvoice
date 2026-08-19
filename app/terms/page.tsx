@@ -1,23 +1,23 @@
 import { LegalPage } from "@/components/LegalPage";
 
-export const metadata = { title: "Terms of Service — Inkvoice" };
+export const metadata = { title: "Terms of Service — Zarbill" };
 
 export default function Terms() {
   return (
     <LegalPage title="Terms of Service" updated="12 August 2026">
       <p>
-        These terms govern your use of Inkvoice, invoicing software operated from Cape Town,
+        These terms govern your use of Zarbill, invoicing software operated from Cape Town,
         South Africa. By creating an account you agree to them.
       </p>
 
       <h2>1. The service</h2>
       <p>
-        Inkvoice lets you record clients and services, create and store invoices, and export
+        Zarbill lets you record clients and services, create and store invoices, and export
         them as PDFs. We provide the software. You are responsible for the content of the
         invoices you create and for sending them to your customers.
       </p>
       <p>
-        Inkvoice is not an accounting, tax or legal service. We do not file returns on your
+        Zarbill is not an accounting, tax or legal service. We do not file returns on your
         behalf or provide financial advice. Please consult a qualified accountant for tax matters.
       </p>
 
@@ -53,7 +53,7 @@ export default function Terms() {
       </p>
 
       <h2>5. Acceptable use</h2>
-      <p>You agree not to use Inkvoice to:</p>
+      <p>You agree not to use Zarbill to:</p>
       <ul>
         <li>Create fraudulent invoices or misrepresent a business.</li>
         <li>Break South African law or the law of your own country.</li>
@@ -64,7 +64,7 @@ export default function Terms() {
 
       <h2>6. Availability</h2>
       <p>
-        We work to keep Inkvoice available and reliable, but we do not guarantee uninterrupted
+        We work to keep Zarbill available and reliable, but we do not guarantee uninterrupted
         service. Maintenance, third-party outages and events outside our control may cause
         downtime. Where a failure on our side affects a meaningful part of your paid month, our
         refund policy applies.
@@ -72,7 +72,7 @@ export default function Terms() {
 
       <h2>7. Liability</h2>
       <p>
-        Inkvoice is provided as-is. To the extent permitted by law, our total liability for any
+        Zarbill is provided as-is. To the extent permitted by law, our total liability for any
         claim relating to the service is limited to the amount you paid us in the three months
         before the claim arose. We are not liable for lost profits, lost business or indirect
         losses.
@@ -81,7 +81,7 @@ export default function Terms() {
       <h2>8. Changes</h2>
       <p>
         We may update these terms. If a change materially affects you, we will give notice by
-        email or in the app before it takes effect. Continuing to use Inkvoice after that means
+        email or in the app before it takes effect. Continuing to use Zarbill after that means
         you accept the updated terms.
       </p>
 
@@ -93,7 +93,7 @@ export default function Terms() {
 
       <h2>10. Contact</h2>
       <p>
-        <a href="mailto:support@inkvoice.app">support@inkvoice.app</a>
+        <a href="mailto:support@zarbill.app">support@zarbill.app</a>
       </p>
     </LegalPage>
   );

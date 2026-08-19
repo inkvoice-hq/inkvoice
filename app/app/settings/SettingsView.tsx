@@ -72,7 +72,7 @@ export function SettingsView({ tenant }: { tenant: Tenant }) {
                 <div className="ink-card-body">
                   <p className="ink-hint">This appears in the header of every invoice you send.</p>
                   <div className="ink-fgrid">
-                    <F label="Business / Your Name" v={f.name} on={(v) => set("name", v)} ph="Inkvoice Studio" />
+                    <F label="Business / Your Name" v={f.name} on={(v) => set("name", v)} ph="Zarbill Studio" />
                     <F label="Email" v={f.email ?? ""} on={(v) => set("email", v)} ph="you@studio.com" type="email" />
                   </div>
                   <div className="ink-fgrid">
