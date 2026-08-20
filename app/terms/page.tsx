@@ -93,7 +93,7 @@ export default function Terms() {
 
       <h2>10. Contact</h2>
       <p>
-        <a href="mailto:support@zarbill.app">support@zarbill.app</a>
+        <a href="mailto:support@zarbill.com">support@zarbill.com</a>
       </p>
     </LegalPage>
   );

@@ -25,7 +25,7 @@ export default function RefundPolicy() {
       <h2>Cancelling your subscription</h2>
       <p>
         You may cancel at any time. To cancel, email{" "}
-        <a href="mailto:support@zarbill.app">support@zarbill.app</a> from the address on
+        <a href="mailto:support@zarbill.com">support@zarbill.com</a> from the address on
         your account, or use the billing section inside the app.
       </p>
       <ul>
@@ -59,7 +59,7 @@ export default function RefundPolicy() {
 
       <h2>How to request a refund</h2>
       <p>
-        Email <a href="mailto:support@zarbill.app">support@zarbill.app</a> from your account
+        Email <a href="mailto:support@zarbill.com">support@zarbill.com</a> from your account
         email address with the reason for your request. We respond within 2 business days.
         Approved refunds are returned to the original payment method via Paystack and typically
         appear within 5–10 business days, depending on your bank.
@@ -81,7 +81,7 @@ export default function RefundPolicy() {
       <h2>Contact</h2>
       <p>
         Questions about billing, cancellations or refunds:{" "}
-        <a href="mailto:support@zarbill.app">support@zarbill.app</a>
+        <a href="mailto:support@zarbill.com">support@zarbill.com</a>
       </p>
     </LegalPage>
   );

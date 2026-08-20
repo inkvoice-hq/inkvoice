@@ -64,7 +64,7 @@ export default function Privacy() {
       </ul>
       <p>
         To exercise any of these, email{" "}
-        <a href="mailto:support@zarbill.app">support@zarbill.app</a>. We respond within
+        <a href="mailto:support@zarbill.com">support@zarbill.com</a>. We respond within
         30 days.
       </p>
 
@@ -82,7 +82,7 @@ export default function Privacy() {
 
       <h2>Contact</h2>
       <p>
-        <a href="mailto:support@zarbill.app">support@zarbill.app</a>
+        <a href="mailto:support@zarbill.com">support@zarbill.com</a>
       </p>
     </LegalPage>
   );
