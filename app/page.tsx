@@ -18,7 +18,7 @@ export default function Landing() {
       <div className="lp">
         <header className="lp-nav">
           <div className="lp-brand">
-            <span className="lp-mark">I</span>
+            <span className="lp-mark">Z</span>
             <span className="lp-name">Zarbill</span>
           </div>
           <nav className="lp-links">
@@ -52,7 +52,7 @@ export default function Landing() {
           <div className="lp-hero-art" aria-hidden="true">
             <div className="lp-invoice">
               <div className="lp-inv-top">
-                <div className="lp-inv-logo">Ink<span>voice</span></div>
+                <div className="lp-inv-logo">Studio Kaya</div>
                 <div className="lp-inv-meta">
                   <div className="lp-inv-label">INVOICE</div>
                   <div className="lp-inv-num">INV-1042</div>
@@ -176,7 +176,7 @@ export default function Landing() {
             <div className="lp-plan">
               <div className="lp-plan-name">Business</div>
               <div className="lp-plan-price">R699<span>/month</span></div>
-              <p className="lp-plan-alt">or $39/month billed in USD</p>
+              <p className="lp-plan-alt">or $49/month billed in USD</p>
               <ul>
                 <li>Everything in Pro</li>
                 <li>Team members (coming soon)</li>
@@ -199,7 +199,7 @@ export default function Landing() {
 
         <footer className="lp-footer">
           <div className="lp-foot-brand">
-            <span className="lp-mark">I</span>
+            <span className="lp-mark">Z</span>
             <span>Zarbill</span>
           </div>
           <nav className="lp-foot-links">

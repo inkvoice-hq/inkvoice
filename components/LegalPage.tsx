@@ -10,7 +10,7 @@ export function LegalPage({ title, updated, children }: {
       <div className="lg">
         <header className="lg-nav">
           <Link href="/" className="lg-brand">
-            <span className="lg-mark">I</span><span>Zarbill</span>
+            <span className="lg-mark">Z</span><span>Zarbill</span>
           </Link>
           <Link href="/login" className="lg-signin">Sign in</Link>
         </header>

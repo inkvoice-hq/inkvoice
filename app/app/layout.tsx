@@ -29,7 +29,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         <nav className="ink-sidebar">
           <div className="ink-brand">
             <div className="ink-brand-mark">
-              <div className="ink-brand-icon">I</div>
+              <div className="ink-brand-icon">Z</div>
               <div>
                 <div className="ink-brand-name">Zarbill</div>
                 <span className="ink-brand-tag">AI Billing OS</span>

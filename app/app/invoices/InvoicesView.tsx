@@ -33,7 +33,7 @@ export function InvoicesView({
 }) {
   const router = useRouter();
   const currency = tenant?.currency ?? "USD";
-  const [invoices] = useState(initialInvoices);
+  const invoices = initialInvoices;
   const [tab, setTab] = useState<"all" | "draft" | "unpaid" | "paid" | "overdue">("all");
   const [modalOpen, setModalOpen] = useState(false);
   const [previewId, setPreviewId] = useState<string | null>(null);
@@ -340,7 +340,7 @@ export function InvoicesView({
               <div className="ink-paper">
                 <div className="ip-header">
                   <div>
-                    <div className="ip-logo">Ink<span>voice</span></div>
+                    <div className="ip-logo">{tenant?.name || "Your Business"}</div>
                     <div className="ip-from">
                       {tenant?.name || "Your Business"}<br />
                       {(tenant?.address || "").split("\n").map((l, i) => <span key={i}>{l}<br /></span>)}

@@ -27,7 +27,7 @@ export default function LoginPage() {
     <div style={styles.wrap}>
       <div style={styles.card}>
         <div style={styles.brand}>
-          <div style={styles.brandIcon}>I</div>
+          <div style={styles.brandIcon}>Z</div>
           <span style={styles.brandName}>Zarbill</span>
         </div>
 

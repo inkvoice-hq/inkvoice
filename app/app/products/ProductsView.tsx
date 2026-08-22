@@ -14,7 +14,7 @@ const EMPTY: ProductInput = {
 
 export function ProductsView({ initialProducts }: { initialProducts: Product[] }) {
   const router = useRouter();
-  const [products] = useState(initialProducts);
+  const products = initialProducts;
   const [modalOpen, setModalOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState<ProductInput>(EMPTY);

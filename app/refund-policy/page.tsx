@@ -14,7 +14,7 @@ export default function RefundPolicy() {
       <p>
         Zarbill is sold as a monthly subscription. The Pro plan is <strong>R99 per month</strong>
         {" "}(or <strong>$18 per month</strong> if billed in US dollars). The Business plan is
-        {" "}<strong>R699 per month</strong> (or <strong>$39 per month</strong>). A free plan is
+        {" "}<strong>R699 per month</strong> (or <strong>$49 per month</strong>). A free plan is
         available with a limit of 3 clients and 5 invoices, and requires no payment details.
       </p>
       <p>

@@ -32,7 +32,7 @@ export function UpgradeView({
   const price = (p: "pro" | "business") =>
     currency === "ZAR"
       ? (p === "pro" ? "R99" : "R699")
-      : (p === "pro" ? "$18" : "$39");
+      : (p === "pro" ? "$18" : "$49");
 
   return (
     <>

@@ -14,7 +14,7 @@ const EMPTY: ClientInput = {
 
 export function ClientsView({ initialClients }: { initialClients: Client[] }) {
   const router = useRouter();
-  const [clients] = useState(initialClients);
+  const clients = initialClients;
   const [modalOpen, setModalOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState<ClientInput>(EMPTY);
