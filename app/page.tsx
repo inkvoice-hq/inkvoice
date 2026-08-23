@@ -1,3 +1,4 @@
+import { headers } from "next/headers";
 import Link from "next/link";
 
 export const metadata = {
@@ -6,7 +7,16 @@ export const metadata = {
     "Create professional invoices, track who owes you, and get paid. Built for South African freelancers, creators and small studios. From R99/month.",
 };
 
-export default function Landing() {
+export default async function Landing() {
+  const h = await headers();
+  const country = h.get("x-vercel-ip-country") || "ZA";
+  const isZA = country === "ZA";
+  const proPrice = isZA ? "R99" : "$18";
+  const bizPrice = isZA ? "R699" : "$49";
+  const freePrice = isZA ? "R0" : "$0";
+  const altPro = isZA ? "or $18/month billed in USD" : "or R99/month billed in ZAR";
+  const altBiz = isZA ? "or $49/month billed in USD" : "or R699/month billed in ZAR";
+
   return (
     <>
       <style>{css}</style>
@@ -148,7 +158,7 @@ export default function Landing() {
           <div className="lp-plans">
             <div className="lp-plan">
               <div className="lp-plan-name">Free</div>
-              <div className="lp-plan-price">R0<span>/month</span></div>
+              <div className="lp-plan-price">{freePrice}<span>/month</span></div>
               <ul>
                 <li>3 clients</li>
                 <li>5 invoices</li>
@@ -161,8 +171,8 @@ export default function Landing() {
             <div className="lp-plan lp-plan-featured">
               <div className="lp-plan-tag">Most popular</div>
               <div className="lp-plan-name">Pro</div>
-              <div className="lp-plan-price">R99<span>/month</span></div>
-              <p className="lp-plan-alt">or $18/month billed in USD</p>
+              <div className="lp-plan-price">{proPrice}<span>/month</span></div>
+              <p className="lp-plan-alt">{altPro}</p>
               <ul>
                 <li>Unlimited clients</li>
                 <li>Unlimited invoices</li>
@@ -175,8 +185,8 @@ export default function Landing() {
 
             <div className="lp-plan">
               <div className="lp-plan-name">Business</div>
-              <div className="lp-plan-price">R699<span>/month</span></div>
-              <p className="lp-plan-alt">or $49/month billed in USD</p>
+              <div className="lp-plan-price">{bizPrice}<span>/month</span></div>
+              <p className="lp-plan-alt">{altBiz}</p>
               <ul>
                 <li>Everything in Pro</li>
                 <li>Team members (coming soon)</li>
