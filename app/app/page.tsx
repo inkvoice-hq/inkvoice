@@ -1,10 +1,31 @@
 import Link from "next/link";
 import { requireTenant } from "@/lib/db/context";
+import { createClient } from "@/lib/supabase/server";
 import { listClients } from "@/lib/db/clients";
+import { listInvoices } from "@/lib/db/invoices";
+import { listProducts } from "@/lib/db/products";
+import { money, displayStatus } from "@/lib/format";
 
 export default async function DashboardPage() {
-  const { email } = await requireTenant();
-  const clients = await listClients();
+  const { email, tenantId } = await requireTenant();
+  const [clients, invoices, products] = await Promise.all([
+    listClients(), listInvoices(), listProducts(),
+  ]);
+
+  const supabase = await createClient();
+  const { data: tenant } = await supabase
+    .from("tenants").select("currency").eq("id", tenantId).maybeSingle();
+  const currency = tenant?.currency ?? "ZAR";
+
+  const outstanding = invoices
+    .filter((i) => i.status !== "paid" && i.status !== "draft")
+    .reduce((s, i) => s + Number(i.total || 0), 0);
+  const overdue = invoices.filter(
+    (i) => displayStatus(i.status, i.due_date) === "overdue"
+  ).length;
+  const paidTotal = invoices
+    .filter((i) => i.status === "paid")
+    .reduce((s, i) => s + Number(i.total || 0), 0);
 
   return (
     <>
@@ -20,32 +41,41 @@ export default async function DashboardPage() {
         </div>
 
         <div style={statRow}>
-          <Link href="/app/clients" style={{ textDecoration: "none" }}>
-            <div style={statCard}>
-              <div style={statLabel}>CLIENTS</div>
-              <div style={statVal}>{clients.length}</div>
-              <div style={statSub}>Manage your clients →</div>
-            </div>
-          </Link>
-          <Link href="/app/invoices" style={{ textDecoration: "none" }}>
+          <div style={{ ...statCard, borderColor: "rgba(79,255,176,0.25)" }}>
+            <div style={statLabel}>OUTSTANDING</div>
+            <div style={{ ...statVal, color: "#4fffb0" }}>{money(outstanding, currency)}</div>
+            <div style={statSub}>{overdue > 0 ? `${overdue} overdue` : "Nothing overdue"}</div>
+          </div>
+          <div style={statCard}>
+            <div style={statLabel}>PAID TO DATE</div>
+            <div style={statVal}>{money(paidTotal, currency)}</div>
+            <div style={statSub}>All time</div>
+          </div>
+        </div>
+
+        <div style={{ ...statRow, marginTop: 14 }}>
+          <Link href="/app/invoices" style={linkReset}>
             <div style={statCard}>
               <div style={statLabel}>INVOICES</div>
-              <div style={statVal}>—</div>
+              <div style={statVal}>{invoices.length}</div>
               <div style={statSub}>Manage invoices →</div>
             </div>
           </Link>
-          <Link href="/app/products" style={{ textDecoration: "none" }}>
+          <Link href="/app/clients" style={linkReset}>
             <div style={statCard}>
-              <div style={statLabel}>PRODUCTS</div>
-              <div style={statVal}>—</div>
+              <div style={statLabel}>CLIENTS</div>
+              <div style={statVal}>{clients.length}</div>
+              <div style={statSub}>Manage clients →</div>
+            </div>
+          </Link>
+          <Link href="/app/products" style={linkReset}>
+            <div style={statCard}>
+              <div style={statLabel}>SERVICES</div>
+              <div style={statVal}>{products.length}</div>
               <div style={statSub}>Manage services →</div>
             </div>
           </Link>
         </div>
-
-        <p style={{ color: "#6e6e88", fontSize: 13, marginTop: 28, lineHeight: 1.7, maxWidth: 560 }}>
-          Everything is live and database-backed. Create clients, save your services, and send invoices — it all syncs to your account.
-        </p>
       </div>
     </>
   );
@@ -56,7 +86,8 @@ const topbar: React.CSSProperties = {
   backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(255,255,255,0.07)",
   padding: "0 32px", height: 60, display: "flex", alignItems: "center",
 };
-const statRow: React.CSSProperties = { display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14, maxWidth: 720 };
+const linkReset: React.CSSProperties = { textDecoration: "none", color: "inherit" };
+const statRow: React.CSSProperties = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14, maxWidth: 760 };
 const statCard: React.CSSProperties = {
   background: "#111116", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 16, padding: 20,
 };
