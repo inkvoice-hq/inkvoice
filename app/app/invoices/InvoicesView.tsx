@@ -4,6 +4,7 @@ import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import type { Invoice, InvoiceItem, Client, Product, InvoiceFormInput } from "@/lib/db/types";
 import { createInvoice_, updateInvoice, deleteInvoice, markInvoicePaid } from "@/lib/db/invoices";
+import { sendInvoiceEmail } from "@/lib/email/invoice";
 import { money, round2, todayISO, addDaysISO, displayStatus } from "@/lib/format";
 
 type TenantLite = {
@@ -120,6 +121,18 @@ export function InvoicesView({
     } finally { setBusy(false); }
   }
 
+  async function onSend(id: string) {
+    if (!confirm("Email this invoice to the client now?")) return;
+    setBusy(true);
+    try {
+      const res = await sendInvoiceEmail(id);
+      alert(res.message);
+      if (res.ok) router.refresh();
+    } catch (e: any) {
+      alert(e?.message || "Send failed.");
+    } finally { setBusy(false); }
+  }
+
   async function onMarkPaid(id: string) {
     setBusy(true);
     try { await markInvoicePaid(id); router.refresh(); }
@@ -186,6 +199,9 @@ export function InvoicesView({
                         <td><span className={"ink-badge b-" + st}>{st}</span></td>
                         <td>
                           <div className="ink-acts">
+                            <button className="ink-act" title="Email to client" onClick={() => onSend(inv.id)}>
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 4h16v16H4z"/><polyline points="4 6 12 13 20 6"/></svg>
+                            </button>
                             <button className="ink-act" title="Preview" onClick={() => setPreviewId(inv.id)}>
                               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                             </button>
