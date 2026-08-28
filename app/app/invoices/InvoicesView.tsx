@@ -354,6 +354,7 @@ export function InvoicesView({
             </div>
             <div className="ink-preview-scroll">
               <div className="ink-paper">
+                {previewInv.status === "paid" && <div className="ip-paid">PAID</div>}
                 <div className="ip-header">
                   <div>
                     <div className="ip-logo">{tenant?.name || "Your Business"}</div>
@@ -513,6 +514,13 @@ tbody tr:hover td { background: rgba(255,255,255,0.02); }
 .ink-preview-bar { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; background: #ddd; border-radius: 20px 20px 0 0; color: #111; }
 .ink-preview-scroll { padding: 20px; }
 .ink-paper { background: #fff; color: #111; border-radius: 12px; padding: 48px; font-family: 'Syne', sans-serif; }
+.ip-paid {
+  position: absolute; top: 90px; right: 70px; transform: rotate(-14deg);
+  border: 3px solid #22c87a; color: #22c87a; border-radius: 8px;
+  font-family: 'JetBrains Mono', monospace; font-size: 26px; font-weight: 700;
+  letter-spacing: 5px; padding: 6px 18px; opacity: 0.85;
+}
+.ink-paper { position: relative; }
 .ip-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 40px; }
 .ip-logo { font-family: 'Instrument Serif', serif; font-size: 30px; font-style: italic; }
 .ip-logo span { color: #22c87a; }

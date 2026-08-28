@@ -5,6 +5,18 @@ import { createClient } from "@/lib/supabase/server";
 import { requireTenant } from "@/lib/db/context";
 import { money } from "@/lib/format";
 
+
+function niceDate(d: string | null): string {
+  if (!d) return "";
+  const months = ["January","February","March","April","May","June",
+                  "July","August","September","October","November","December"];
+  const parts = String(d).slice(0, 10).split("-");
+  if (parts.length !== 3) return String(d);
+  const y = parts[0], m = parseInt(parts[1], 10), day = parseInt(parts[2], 10);
+  if (!months[m - 1]) return String(d);
+  return day + " " + months[m - 1] + " " + y;
+}
+
 export async function sendInvoiceEmail(
   invoiceId: string
 ): Promise<{ ok: boolean; message: string }> {
@@ -61,7 +73,7 @@ export async function sendInvoiceEmail(
     '<p style="color:#666;font-size:13px;margin:0 0 24px">Tax Invoice ' + inv.number + "</p>" +
     "<p>Hi " + client.name + ",</p>" +
     "<p>Please find your invoice below. Total due is <strong>" + money(inv.total, cur) +
-    "</strong>" + (inv.due_date ? " by <strong>" + inv.due_date + "</strong>" : "") + ".</p>" +
+    "</strong>" + (inv.due_date ? " by <strong>" + niceDate(inv.due_date) + "</strong>" : "") + ".</p>" +
     '<table width="100%" cellpadding="0" cellspacing="0" style="font-size:13px;margin-top:16px">' +
     '<tr><th align="left" style="font-size:11px;color:#999;padding-bottom:6px">DESCRIPTION</th>' +
     '<th align="center" style="font-size:11px;color:#999;padding-bottom:6px">QTY</th>' +
