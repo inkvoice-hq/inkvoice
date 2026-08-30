@@ -9,9 +9,11 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json().catch(() => ({}));
     const plan = body?.plan === "business" ? "business" : "pro";
-    const currency = body?.currency === "USD" ? "USD" : "ZAR";
+    // Paystack South Africa settles in ZAR only. We may DISPLAY $ prices,
+    // but every charge is made in rands; the customer's bank converts.
+    const currency = "ZAR";
 
-    const amount = PLAN_PRICING[plan][currency];
+    const amount = PLAN_PRICING[plan].ZAR;
     if (!amount) return NextResponse.json({ error: "Invalid plan." }, { status: 400 });
 
     const secret = process.env.PAYSTACK_SECRET_KEY;
