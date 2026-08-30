@@ -48,6 +48,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           <div className="ink-nav-section">
             <div className="ink-nav-label">System</div>
             <NavLink href="/app/settings" icon="gear">Settings</NavLink>
+            <NavLink href="/app/upgrade" icon="cart">Billing &amp; Plan</NavLink>
           </div>
 
           <div className="ink-sidebar-bottom">
