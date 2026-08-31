@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireTenant } from "@/lib/db/context";
-import { PLAN_PRICING } from "@/lib/plans";
 
 export async function POST(req: NextRequest) {
   try {
@@ -9,11 +8,26 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json().catch(() => ({}));
     const plan = body?.plan === "business" ? "business" : "pro";
-    // Paystack South Africa settles in ZAR only. We may DISPLAY $ prices,
-    // but every charge is made in rands; the customer's bank converts.
+    // Paystack South Africa settles in ZAR only. The toggle picks a PRICING
+    // TIER, not a settlement currency; every charge is made in rands and the
+    // customer's bank converts. A plan code makes it a monthly subscription.
+    const tier = body?.currency === "USD" ? "US" : "SA";
     const currency = "ZAR";
 
-    const amount = PLAN_PRICING[plan].ZAR;
+    const PLANS = {
+      SA: {
+        pro: { code: process.env.PAYSTACK_PLAN_SA_PRO, amount: 9900 },
+        business: { code: process.env.PAYSTACK_PLAN_SA_BIZ, amount: 69900 },
+      },
+      US: {
+        pro: { code: process.env.PAYSTACK_PLAN_US_PRO, amount: 30000 },
+        business: { code: process.env.PAYSTACK_PLAN_US_BIZ, amount: 79900 },
+      },
+    } as const;
+
+    const chosen = PLANS[tier][plan];
+    const amount = chosen.amount;
+    const planCode = chosen.code;
     if (!amount) return NextResponse.json({ error: "Invalid plan." }, { status: 400 });
 
     const secret = process.env.PAYSTACK_SECRET_KEY;
@@ -32,6 +46,7 @@ export async function POST(req: NextRequest) {
         amount,
         currency,
         callback_url: `${origin}/app/upgrade?status=processing`,
+        ...(planCode ? { plan: planCode } : {}),
         metadata: { tenant_id: tenantId, user_id: userId, plan },
       }),
     });
