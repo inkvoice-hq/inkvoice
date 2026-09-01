@@ -30,7 +30,7 @@ export async function sendInvoiceEmail(
 
   const { data: tenant } = await supabase
     .from("tenants")
-    .select("name, email, phone, address, currency, invoice_notes, footer_message")
+    .select("name, logo_url, email, phone, address, currency, invoice_notes, footer_message")
     .eq("id", tenantId).maybeSingle();
 
   let client: { name: string; email: string | null } | null = null;
@@ -69,7 +69,10 @@ export async function sendInvoiceEmail(
 
   const html =
     '<div style="font-family:Helvetica,Arial,sans-serif;max-width:600px;margin:0 auto;color:#111">' +
-    '<h2 style="margin:0 0 4px">' + biz + "</h2>" +
+    (tenant?.logo_url
+      ? '<img src="' + tenant.logo_url + '" alt="' + biz +
+        '" style="max-height:52px;max-width:200px;margin:0 0 10px;display:block" />'
+      : '<h2 style="margin:0 0 4px">' + biz + "</h2>") +
     '<p style="color:#666;font-size:13px;margin:0 0 24px">Tax Invoice ' + inv.number + "</p>" +
     "<p>Hi " + client.name + ",</p>" +
     "<p>Please find your invoice below. Total due is <strong>" + money(inv.total, cur) +
