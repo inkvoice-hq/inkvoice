@@ -17,7 +17,7 @@ export default async function InvoicesPage() {
   const supabase = await createClient();
   const { data: tenant } = await supabase
     .from("tenants")
-    .select("name, email, address, phone, currency, payment_terms, default_tax_rate, invoice_notes, footer_message")
+    .select("name, logo_url, email, address, phone, currency, payment_terms, default_tax_rate, invoice_notes, footer_message")
     .eq("id", tenantId)
     .maybeSingle();
 

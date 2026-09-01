@@ -10,6 +10,7 @@ export interface Tenant {
   phone: string | null;
   address: string | null;
   website: string | null;
+  logo_url: string | null;
   tax_reg: string | null;
   business_type: string;
   currency: string;

@@ -8,7 +8,7 @@ import { sendInvoiceEmail } from "@/lib/email/invoice";
 import { money, round2, todayISO, addDaysISO, displayStatus } from "@/lib/format";
 
 type TenantLite = {
-  name: string | null; email: string | null; address: string | null; phone: string | null;
+  name: string | null; logo_url: string | null; email: string | null; address: string | null; phone: string | null;
   currency: string | null; payment_terms: number | null; default_tax_rate: number | null;
   invoice_notes: string | null; footer_message: string | null;
 } | null;
@@ -357,7 +357,9 @@ export function InvoicesView({
                 {previewInv.status === "paid" && <div className="ip-paid">PAID</div>}
                 <div className="ip-header">
                   <div>
-                    <div className="ip-logo">{tenant?.name || "Your Business"}</div>
+                    {tenant?.logo_url
+                      ? <img src={tenant.logo_url} alt="" className="ip-logo-img" />
+                      : <div className="ip-logo">{tenant?.name || "Your Business"}</div>}
                     <div className="ip-from">
                       {tenant?.name || "Your Business"}<br />
                       {(tenant?.address || "").split("\n").map((l, i) => <span key={i}>{l}<br /></span>)}
@@ -522,6 +524,7 @@ tbody tr:hover td { background: rgba(255,255,255,0.02); }
 }
 .ink-paper { position: relative; }
 .ip-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 40px; }
+.ip-logo-img { max-height: 56px; max-width: 200px; object-fit: contain; }
 .ip-logo { font-family: 'Instrument Serif', serif; font-size: 30px; font-style: italic; }
 .ip-logo span { color: #22c87a; }
 .ip-from { font-size: 12px; color: #666; margin-top: 8px; line-height: 1.6; }

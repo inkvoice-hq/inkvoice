@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import type { Tenant, TenantSettingsInput } from "@/lib/db/types";
 import { updateTenantSettings } from "@/lib/db/tenant";
 import { CURRENCY_SYMBOLS } from "@/lib/format";
+import { uploadLogo, removeLogo } from "@/lib/db/logo";
 
 const BIZ_TYPES = ["Freelancer / Solo Creator", "Small Agency", "Consultancy", "LLC / Ltd", "Corporation"];
 
@@ -71,6 +72,29 @@ export function SettingsView({ tenant }: { tenant: Tenant }) {
                 <div className="ink-card-head"><span>Business Information</span></div>
                 <div className="ink-card-body">
                   <p className="ink-hint">This appears in the header of every invoice you send.</p>
+                  <div className="ink-fg">
+                    <label>Logo (optional)</label>
+                    {tenant.logo_url ? (
+                      <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 8 }}>
+                        <img src={tenant.logo_url} alt="Your logo"
+                          style={{ height: 44, background: "#fff", padding: 6, borderRadius: 6 }} />
+                        <button className="ink-btn ink-btn-ghost" onClick={async () => {
+                          const r = await removeLogo(); alert(r.message); if (r.ok) router.refresh();
+                        }}>Remove</button>
+                      </div>
+                    ) : (
+                      <p style={{ fontSize: 12, color: "#6e6e88", margin: "0 0 8px" }}>
+                        No logo set &mdash; your business name is used instead.
+                      </p>
+                    )}
+                    <input type="file" accept="image/png,image/jpeg,image/webp"
+                      onChange={async (e) => {
+                        const f = e.target.files?.[0]; if (!f) return;
+                        const fd = new FormData(); fd.append("logo", f);
+                        const r = await uploadLogo(fd); alert(r.message); if (r.ok) router.refresh();
+                      }}
+                      style={{ fontSize: 12, color: "#9898b8" }} />
+                  </div>
                   <div className="ink-fgrid">
                     <F label="Business / Your Name" v={f.name} on={(v) => set("name", v)} ph="Zarbill Studio" />
                     <F label="Email" v={f.email ?? ""} on={(v) => set("email", v)} ph="you@studio.com" type="email" />
