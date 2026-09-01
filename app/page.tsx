@@ -40,7 +40,7 @@ export default async function Landing() {
 
         <section className="lp-hero">
           <div className="lp-hero-copy">
-            <p className="lp-eyebrow">For South African freelancers &amp; small businesses</p>
+            <p className="lp-eyebrow">For freelancers &amp; small businesses everywhere</p>
             <h1>
               Send the invoice.<br />
               <em>Then get paid.</em>
