@@ -175,8 +175,12 @@ export function InvoicesView({
           <div className="ink-empty">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
             <h3>{tab === "all" ? "No invoices yet" : "No " + tab + " invoices"}</h3>
-            <p>{tab === "all" ? "Create your first invoice and get paid. Everything saves to your account." : "Try a different filter."}</p>
-            {tab === "all" && <button className="ink-btn ink-btn-primary" onClick={openNew} style={{ marginTop: 18 }}>Create your first invoice</button>}
+            <p>{tab !== "all" ? "Try a different filter." : clients.length === 0
+              ? "Invoices need a client. Add one first, then come back here \u2014 it takes about 30 seconds."
+              : "Create your first invoice and get paid. Everything saves to your account."}</p>
+            {tab === "all" && (clients.length === 0
+              ? <a className="ink-btn ink-btn-primary" href="/app/clients" style={{ marginTop: 18, textDecoration: "none" }}>Add a client first</a>
+              : <button className="ink-btn ink-btn-primary" onClick={openNew} style={{ marginTop: 18 }}>Create your first invoice</button>)}
           </div>
         ) : (
           <div className="ink-card">
