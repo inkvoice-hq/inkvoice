@@ -17,19 +17,19 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL("https://zarbill.com"),
   title: {
-    default: "Zarbill — Tax-ready invoicing for South African freelancers",
+    default: "Zarbill — Tax-ready invoicing for freelancers",
     template: "%s · Zarbill",
   },
   description:
-    "Create SARS-ready tax invoices in under a minute. EFT-first, priced in rands, built for South African freelancers. Free to start.",
+    "Create professional, tax-ready invoices in under a minute. Send them to clients, track who has paid, and bill in any major currency. Free to start.",
   applicationName: "Zarbill",
   openGraph: {
     type: "website",
     url: "https://zarbill.com",
     siteName: "Zarbill",
-    title: "Zarbill — Tax-ready invoicing for South African freelancers",
-    description: "SARS-ready tax invoices, EFT-first, in rands. Free to start.",
-    locale: "en_ZA",
+    title: "Zarbill — Tax-ready invoicing for freelancers",
+    description: "Tax-ready invoices in under a minute. Track who has paid. Free to start.",
+    locale: "en_US",
   },
   robots: { index: true, follow: true },
 };
@@ -41,7 +41,7 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang="en-ZA"
+      lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">

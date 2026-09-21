@@ -4,7 +4,7 @@ import Link from "next/link";
 export const metadata = {
   title: "Zarbill — Invoicing for freelancers and small studios",
   description:
-    "Create professional invoices, track who owes you, and get paid. Built for South African freelancers, creators and small studios. From R99/month.",
+    "Create professional invoices, track who owes you, and get paid. Built for freelancers, creators and small studios. Free to start.",
 };
 
 export default async function Landing() {

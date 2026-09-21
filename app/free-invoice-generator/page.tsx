@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { GeneratorView } from "./GeneratorView";
+import { getRegion } from "@/lib/region";
 
 export const metadata: Metadata = {
   title: "Free invoice generator — no signup required",
   description:
-    "Create and download a professional tax invoice in under a minute. No account, no email, no watermark. Works in rands, dollars, pounds and euros.",
+    "Create and download a professional tax invoice in under a minute. No account, no email, no watermark. Works in dollars, pounds, euros and more.",
   alternates: { canonical: "https://zarbill.com/free-invoice-generator" },
   openGraph: {
     title: "Free invoice generator — no signup required",
@@ -15,7 +16,8 @@ export const metadata: Metadata = {
   },
 };
 
-export default function Page() {
+export default async function Page() {
+  const { isZA, currency } = await getRegion();
   return (
     <main className="gen-wrap">
       <link
@@ -31,7 +33,7 @@ export default function Page() {
         </p>
       </header>
 
-      <GeneratorView />
+      <GeneratorView defaultCurrency={currency} />
 
       <section className="gen-notes">
         <h2>What every tax invoice needs</h2>
@@ -45,8 +47,7 @@ export default function Page() {
         </p>
         <p>
           If you are registered for VAT or sales tax, your registration number belongs
-          on the invoice too. In South Africa a valid tax invoice must carry your VAT
-          number and show VAT at 15%. The generator above lays all of this out for you.
+          on the invoice too.{isZA ? " In South Africa a valid tax invoice must carry your VAT number and show VAT at 15%." : ""} The generator above lays all of this out for you.
         </p>
 
         <h2>Getting paid faster</h2>

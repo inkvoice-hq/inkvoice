@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 
-const SYMBOLS: Record<string, string> = { ZAR: "R", USD: "$", GBP: "£", EUR: "€", AUD: "A$", CAD: "C$" };
+const SYMBOLS: Record<string, string> = { USD: "$", GBP: "£", EUR: "€", AUD: "A$", CAD: "C$", ZAR: "R" };
 
 type Item = { desc: string; qty: number; rate: number };
 
@@ -20,11 +20,11 @@ function niceDate(d: string) {
   return parseInt(p[2], 10) + " " + m[parseInt(p[1], 10) - 1] + " " + p[0];
 }
 
-export function GeneratorView() {
+export function GeneratorView({ defaultCurrency = "USD" }: { defaultCurrency?: string }) {
   const today = new Date().toISOString().slice(0, 10);
   const in30 = new Date(Date.now() + 30 * 864e5).toISOString().slice(0, 10);
 
-  const [cur, setCur] = useState("ZAR");
+  const [cur, setCur] = useState(SYMBOLS[defaultCurrency] ? defaultCurrency : "USD");
   const [from, setFrom] = useState({ name: "", email: "", address: "", vat: "" });
   const [to, setTo] = useState({ name: "", email: "", address: "" });
   const [num, setNum] = useState("INV-1001");
@@ -71,7 +71,7 @@ export function GeneratorView() {
           </label>
         </div>
         <label>Address
-          <textarea value={from.address} onChange={(e) => setFrom({ ...from, address: e.target.value })} placeholder="123 Long Street, Cape Town" />
+          <textarea value={from.address} onChange={(e) => setFrom({ ...from, address: e.target.value })} placeholder="Street, city, country" />
         </label>
 
         <h3>Bill to</h3>
@@ -117,7 +117,7 @@ export function GeneratorView() {
         </div>
 
         <label>Payment instructions
-          <textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder={"Bank: FNB\nAccount: 000000000\nReference: " + num} />
+          <textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder={"Bank: Your bank\nAccount: 000000000\nReference: " + num} />
         </label>
 
         <button className="gen-print" onClick={() => window.print()}>Download as PDF</button>
