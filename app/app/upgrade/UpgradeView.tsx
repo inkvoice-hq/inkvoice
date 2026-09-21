@@ -4,9 +4,9 @@ import { useState } from "react";
 import { PLAN_LIMITS } from "@/lib/plans";
 
 export function UpgradeView({
-  plan, clientCount, invoiceCount,
-}: { plan: string; clientCount: number; invoiceCount: number }) {
-  const [currency, setCurrency] = useState<"ZAR" | "USD">("ZAR");
+  plan, clientCount, invoiceCount, isZA = true,
+}: { plan: string; clientCount: number; invoiceCount: number; isZA?: boolean }) {
+  const currency: "ZAR" | "USD" = isZA ? "ZAR" : "USD";
   const [busy, setBusy] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
@@ -56,10 +56,6 @@ export function UpgradeView({
               </div>
             </div>
 
-            <div className="ink-curr-toggle">
-              <button className={currency === "ZAR" ? "on" : ""} onClick={() => setCurrency("ZAR")}>Pay in Rand</button>
-              <button className={currency === "USD" ? "on" : ""} onClick={() => setCurrency("USD")}>Pay in USD</button>
-            </div>
 
             <div className="ink-plans">
               <div className="ink-plan">
@@ -95,7 +91,7 @@ export function UpgradeView({
 
             {err && <p className="ink-err">{err}</p>}
             <p className="ink-note">
-              Payments are processed securely by Paystack. Cards and EFT supported.
+              {isZA ? "Payments are processed securely by Paystack. Cards and EFT supported. " : "Payments are processed securely by Paystack. Your card is charged in ZAR (R300/month for Pro, R799/month for Business) and your bank converts it to your currency. "}
               Your plan activates automatically once payment is confirmed.
             </p>
           </>

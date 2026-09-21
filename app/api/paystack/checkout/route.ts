@@ -11,7 +11,8 @@ export async function POST(req: NextRequest) {
     // Paystack South Africa settles in ZAR only. The toggle picks a PRICING
     // TIER, not a settlement currency; every charge is made in rands and the
     // customer's bank converts. A plan code makes it a monthly subscription.
-    const tier = body?.currency === "USD" ? "US" : "SA";
+    const country = (req.headers.get("x-vercel-ip-country") || "ZA").toUpperCase();
+    const tier = country === "ZA" ? "SA" : "US";
     const currency = "ZAR";
 
     const PLANS = {
