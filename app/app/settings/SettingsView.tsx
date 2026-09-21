@@ -100,10 +100,10 @@ export function SettingsView({ tenant }: { tenant: Tenant }) {
                     <F label="Email" v={f.email ?? ""} on={(v) => set("email", v)} ph="you@studio.com" type="email" />
                   </div>
                   <div className="ink-fgrid">
-                    <F label="Phone" v={f.phone ?? ""} on={(v) => set("phone", v)} ph="+27 ..." />
+                    <F label="Phone" v={f.phone ?? ""} on={(v) => set("phone", v)} ph="Phone number" />
                     <F label="Website" v={f.website ?? ""} on={(v) => set("website", v)} ph="yoursite.com" />
                   </div>
-                  <F label="Address" v={f.address ?? ""} on={(v) => set("address", v)} ph="123 Creator Ave, Cape Town" area />
+                  <F label="Address" v={f.address ?? ""} on={(v) => set("address", v)} ph="Street, city, country" area />
                   <div className="ink-fgrid">
                     <F label="Tax / VAT Registration #" v={f.tax_reg ?? ""} on={(v) => set("tax_reg", v)} ph="Optional" />
                     <div className="ink-fg">
@@ -148,7 +148,7 @@ export function SettingsView({ tenant }: { tenant: Tenant }) {
                     </div>
                   </div>
                   <F label="Default Payment Instructions" v={f.invoice_notes ?? ""} on={(v) => set("invoice_notes", v)}
-                    ph="Bank: FNB / Account: 000000000 / Ref: Invoice #" area />
+                    ph="Bank name / Account number / Reference: invoice number" area />
                   <F label="Invoice Footer Message" v={f.footer_message ?? ""} on={(v) => set("footer_message", v)}
                     ph="Thank you for your business!" />
                 </div>

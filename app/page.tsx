@@ -14,8 +14,8 @@ export default async function Landing() {
   const proPrice = isZA ? "R99" : "$18";
   const bizPrice = isZA ? "R699" : "$49";
   const freePrice = isZA ? "R0" : "$0";
-  const altPro = isZA ? "or $18/month billed in USD" : "or R99/month billed in ZAR";
-  const altBiz = isZA ? "or $49/month billed in USD" : "or R699/month billed in ZAR";
+  const altPro = "Billed monthly. Cancel anytime.";
+  const altBiz = "Billed monthly. Cancel anytime.";
 
   return (
     <>
@@ -40,7 +40,7 @@ export default async function Landing() {
 
         <section className="lp-hero">
           <div className="lp-hero-copy">
-            <p className="lp-eyebrow">For freelancers &amp; small businesses everywhere</p>
+            <p className="lp-eyebrow">{isZA ? "SARS-ready invoicing for South African freelancers" : "For freelancers & small businesses everywhere"}</p>
             <h1>
               Send the invoice.<br />
               <em>Then get paid.</em>
@@ -80,14 +80,14 @@ export default async function Landing() {
               </div>
               <table className="lp-inv-tbl">
                 <tbody>
-                  <tr><td>Brand video — 90 sec</td><td>1</td><td>R 12 000.00</td></tr>
-                  <tr><td>Social cutdowns</td><td>4</td><td>R 6 400.00</td></tr>
-                  <tr><td>Colour grade</td><td>1</td><td>R 2 200.00</td></tr>
+                  <tr><td>Brand video — 90 sec</td><td>1</td><td>{isZA ? "R 12 000.00" : "$12,000.00"}</td></tr>
+                  <tr><td>Social cutdowns</td><td>4</td><td>{isZA ? "R 6 400.00" : "$6,400.00"}</td></tr>
+                  <tr><td>Colour grade</td><td>1</td><td>{isZA ? "R 2 200.00" : "$2,200.00"}</td></tr>
                 </tbody>
               </table>
               <div className="lp-inv-total">
                 <span>Total due</span>
-                <strong>R 20 600.00</strong>
+                <strong>{isZA ? "R 20 600.00" : "$20,600.00"}</strong>
               </div>
               <div className="lp-inv-stamp">PAID</div>
             </div>
@@ -132,7 +132,7 @@ export default async function Landing() {
               Settings.
             </Feature>
             <Feature title="Rands or dollars">
-              Bill local clients in ZAR and international clients in USD, GBP, EUR and more.
+              {isZA ? "Bill local clients in ZAR and international clients in USD, GBP, EUR and more." : "Bill each client in the currency they pay in: USD, GBP, EUR and more."}
             </Feature>
             <Feature title="Overdue, flagged automatically">
               An unpaid invoice past its due date marks itself overdue. Nothing slips.
@@ -220,7 +220,7 @@ export default async function Landing() {
           </nav>
           <p className="lp-foot-note">
             © {new Date().getFullYear()} Zarbill. Invoicing software for independent
-            businesses. Built in Cape Town, South Africa.
+            businesses. {isZA ? "Built in Cape Town, South Africa." : ""}
           </p>
         </footer>
       </div>
