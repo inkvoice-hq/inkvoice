@@ -99,6 +99,20 @@ export function InvoicesView({
     setForm((f) => ({ ...f, items: f.items.filter((_, i) => i !== idx) }));
   }
 
+  function addProduct(id: string) {
+    const p = products.find((x) => x.id === id);
+    if (!p) return;
+    setForm((f) => {
+      const items = f.items.slice();
+      const price = Number(p.price) || 0;
+      const line = { desc: p.name, qty: 1, rate: price, total: round2(price) };
+      const last = items[items.length - 1];
+      if (last && !(last.desc ?? "").trim() && !Number(last.rate)) items[items.length - 1] = line;
+      else items.push(line);
+      return { ...f, items };
+    });
+  }
+
   function onDescChange(idx: number, value: string) {
     const p = products.find((x) => x.name === value);
     if (p) setItem(idx, { desc: value, rate: Number(p.price) || 0 });
@@ -270,6 +284,17 @@ export function InvoicesView({
                 <input value={form.description ?? ""} onChange={(e) => setF("description", e.target.value)} placeholder="e.g. Social Media Package" />
               </div>
 
+              {products.length > 0 && (
+                <div className="ink-fg" style={{ marginTop: 18, marginBottom: 4 }}>
+                  <label>Add a saved service</label>
+                  <select value="" onChange={(e) => { if (e.target.value) addProduct(e.target.value); }}>
+                    <option value="">Choose a service to add</option>
+                    {products.map((pr) => (
+                      <option key={pr.id} value={pr.id}>{pr.name} ({money(Number(pr.price) || 0, currency)})</option>
+                    ))}
+                  </select>
+                </div>
+              )}
               <div className="ink-li-head">
                 <div>Description</div><div className="ink-c">Qty</div><div className="ink-r">Rate</div><div className="ink-r">Amount</div><div />
               </div>
@@ -281,10 +306,10 @@ export function InvoicesView({
                     onChange={(e) => onDescChange(idx, e.target.value)}
                     placeholder="Description"
                   />
-                  <input type="number" step="any" min="0" value={it.qty}
-                    onChange={(e) => setItem(idx, { qty: parseFloat(e.target.value) || 0 })} className="ink-c" />
-                  <input type="number" step="0.01" min="0" value={it.rate}
-                    onChange={(e) => setItem(idx, { rate: parseFloat(e.target.value) || 0 })} />
+                  <label className="ink-li-lbl"><span>Qty</span><input type="number" step="any" min="0" value={it.qty}
+                    onChange={(e) => setItem(idx, { qty: parseFloat(e.target.value) || 0 })} className="ink-c" /></label>
+                  <label className="ink-li-lbl"><span>Rate</span><input type="number" step="0.01" min="0" value={it.rate}
+                    onChange={(e) => setItem(idx, { rate: parseFloat(e.target.value) || 0 })} /></label>
                   <div className="ink-li-amt">{money((Number(it.qty) || 0) * (Number(it.rate) || 0), currency)}</div>
                   <button className="ink-rm" onClick={() => removeItem(idx)} disabled={form.items.length === 1}>×</button>
                 </div>
@@ -555,5 +580,25 @@ tbody tr:hover td { background: rgba(255,255,255,0.02); }
   .ink-modal, .ink-preview-shell { box-shadow: none; border: none; background: #fff; max-width: none; max-height: none; overflow: visible; }
   .ink-preview-scroll { padding: 0; }
   .ink-paper { border-radius: 0; padding: 0; }
+}
+.ink-li-lbl { display: contents; }
+.ink-li-lbl span { display: none; }
+@media (max-width: 640px) {
+  .ink-overlay { padding: 8px; align-items: flex-start; }
+  .ink-modal { max-height: 96vh; border-radius: 14px; }
+  .ink-modal-head, .ink-modal-body { padding: 16px; }
+  .ink-modal-foot { padding: 14px 16px; }
+  .ink-fgrid { grid-template-columns: 1fr; gap: 0; }
+  .ink-li-head { display: none; }
+  .ink-li-row { grid-template-columns: 1fr 1fr 36px; grid-template-areas: "desc desc rm" "qty rate rate" "amt amt amt"; background: var(--ink3); border: 1px solid var(--border); border-radius: 10px; padding: 10px; }
+  .ink-li-row > :nth-child(1) { grid-area: desc; }
+  .ink-li-row > :nth-child(2) { grid-area: qty; }
+  .ink-li-row > :nth-child(3) { grid-area: rate; }
+  .ink-li-row > :nth-child(4) { grid-area: amt; }
+  .ink-li-row > :nth-child(5) { grid-area: rm; justify-self: end; }
+  .ink-li-row input { background: var(--ink2); }
+  .ink-li-lbl { display: block; }
+  .ink-li-lbl span { display: block; font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+  .ink-fg input, .ink-fg select, .ink-fg textarea, .ink-li-row input { font-size: 16px; }
 }
 `;
