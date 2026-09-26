@@ -1,12 +1,14 @@
 import { requireTenant } from "@/lib/db/context";
 import { applyRegionDefaults } from "@/lib/region";
+import { sendWelcomeEmail } from "@/lib/email/welcome";
 import { createClient } from "@/lib/supabase/server";
 import { logOut } from "@/lib/auth/actions";
 import { NavLink } from "@/components/NavLink";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
-  const { tenantId } = await requireTenant();
+  const { tenantId, email } = await requireTenant();
   await applyRegionDefaults(tenantId);
+  await sendWelcomeEmail(tenantId, email ?? null);
 
   const supabase = await createClient();
   const { data: tenant } = await supabase
