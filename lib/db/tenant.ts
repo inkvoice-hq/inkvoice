@@ -41,3 +41,13 @@ export async function updateTenantSettings(input: TenantSettingsInput): Promise<
 
   if (error) throw new Error(error.message);
 }
+
+export async function setRemindersEnabled(enabled: boolean): Promise<void> {
+  const { tenantId } = await requireTenant();
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("tenants")
+    .update({ reminders_enabled: !!enabled })
+    .eq("id", tenantId);
+  if (error) throw new Error(error.message);
+}

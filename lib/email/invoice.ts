@@ -4,6 +4,7 @@ import { Resend } from "resend";
 import { createClient } from "@/lib/supabase/server";
 import { requireTenant } from "@/lib/db/context";
 import { money } from "@/lib/format";
+import { invoiceUrl } from "@/lib/reminders";
 
 
 function niceDate(d: string | null): string {
@@ -88,12 +89,18 @@ export async function sendInvoiceEmail(
     '<tr><td colspan="3" align="right" style="padding-top:8px;font-size:16px"><strong>Total Due</strong></td>' +
     '<td align="right" style="padding-top:8px;font-size:16px"><strong>' + money(inv.total, cur) +
     "</strong></td></tr></table>" +
+    (inv.public_token
+      ? '<p style="margin:26px 0 0"><a href="' + invoiceUrl(inv.public_token) +
+        '" style="display:inline-block;background:#111;color:#fff;text-decoration:none;padding:13px 26px;' +
+        'border-radius:8px;font-size:14px;font-weight:bold">View invoice online</a></p>'
+      : "") +
     notesBlock +
     '<p style="margin-top:28px;font-size:13px;color:#555">' +
     (tenant?.footer_message || "Thank you for your business!") + "</p>" +
     '<p style="font-size:12px;color:#888">' + biz +
     (tenant?.email ? " &middot; " + tenant.email : "") +
-    (tenant?.phone ? " &middot; " + tenant.phone : "") + "</p></div>";
+    (tenant?.phone ? " &middot; " + tenant.phone : "") + "</p>" +
+    '<p style="font-size:11px;color:#aaa;margin-top:18px">Sent with <a href="https://zarbill.com/?ref=invoice" style="color:#aaa">Zarbill</a></p></div>';
 
   const resend = new Resend(key);
   const from = process.env.INVOICE_FROM_EMAIL || "invoices@zarbill.com";

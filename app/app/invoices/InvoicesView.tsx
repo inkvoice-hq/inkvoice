@@ -147,6 +147,16 @@ export function InvoicesView({
     } finally { setBusy(false); }
   }
 
+  async function onCopyLink(inv: Invoice) {
+    const url = window.location.origin + "/i/" + inv.public_token;
+    try {
+      await navigator.clipboard.writeText(url);
+      alert("Client link copied. Paste it into WhatsApp, email or anywhere:\n\n" + url);
+    } catch {
+      prompt("Copy this client link:", url);
+    }
+  }
+
   async function onMarkPaid(id: string) {
     setBusy(true);
     try { await markInvoicePaid(id); router.refresh(); }
@@ -214,12 +224,25 @@ export function InvoicesView({
                         <td className="ink-mono ink-bold">{money(inv.total, currency)}</td>
                         <td className="ink-muted ink-mono ink-sm">{inv.issue_date || "—"}</td>
                         <td className="ink-muted ink-mono ink-sm">{inv.due_date || "—"}</td>
-                        <td><span className={"ink-badge b-" + st}>{st}</span></td>
+                        <td>
+                          <span className={"ink-badge b-" + st}>{st}</span>
+                          {inv.status !== "draft" && inv.status !== "paid" && (inv.viewed_at || inv.reminders_sent > 0) && (
+                            <div className="ink-track">
+                              {inv.viewed_at && <span className="v" title={"Client opened it on " + inv.viewed_at.slice(0, 10)}>&#9679; Viewed</span>}
+                              {inv.reminders_sent > 0 && <span>{inv.reminders_sent} reminder{inv.reminders_sent === 1 ? "" : "s"} sent</span>}
+                            </div>
+                          )}
+                        </td>
                         <td>
                           <div className="ink-acts">
                             <button className="ink-act" title="Email to client" onClick={() => onSend(inv.id)}>
                               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 4h16v16H4z"/><polyline points="4 6 12 13 20 6"/></svg>
                             </button>
+                            {inv.status !== "draft" && inv.public_token && (
+                              <button className="ink-act" title="Copy client link" onClick={() => onCopyLink(inv)}>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                              </button>
+                            )}
                             <button className="ink-act" title="Preview" onClick={() => setPreviewId(inv.id)}>
                               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                             </button>
@@ -502,6 +525,8 @@ tbody tr:hover td { background: rgba(255,255,255,0.02); }
 .b-unpaid { background: rgba(255,201,64,0.12); color: var(--gold); }
 .b-overdue { background: rgba(255,107,107,0.12); color: var(--electric3); }
 .b-draft { background: rgba(110,110,136,0.2); color: var(--muted2); }
+.ink-track { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; font-size: 10px; font-family: 'JetBrains Mono', monospace; color: var(--muted); white-space: nowrap; }
+.ink-track .v { color: var(--electric2); }
 .ink-acts { display: flex; gap: 2px; }
 .ink-act { background: none; border: none; cursor: pointer; padding: 6px; border-radius: 6px; color: var(--muted); transition: all 0.15s; }
 .ink-act:hover { background: rgba(255,255,255,0.06); color: var(--text); }

@@ -19,6 +19,7 @@ export interface Tenant {
   next_invoice_number: number;
   invoice_notes: string | null;
   footer_message: string | null;
+  reminders_enabled: boolean;
   plan: Plan;
   created_at: string;
   updated_at: string;
@@ -75,6 +76,10 @@ export interface Invoice {
   items: InvoiceItem[];
   subtotal: number;
   total: number;
+  public_token: string;
+  viewed_at: string | null;
+  reminders_sent: number;
+  last_reminder_at: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -96,7 +101,7 @@ export interface Subscription {
 
 export type ClientInput = Omit<Client, "id" | "tenant_id" | "created_at" | "updated_at">;
 export type ProductInput = Omit<Product, "id" | "tenant_id" | "created_at">;
-export type InvoiceInput = Omit<Invoice, "id" | "tenant_id" | "created_at" | "updated_at">;
+export type InvoiceInput = Omit<Invoice, "id" | "tenant_id" | "created_at" | "updated_at" | "public_token" | "viewed_at" | "reminders_sent" | "last_reminder_at">;
 
 export interface InvoiceFormInput {
   client_id: string | null;
