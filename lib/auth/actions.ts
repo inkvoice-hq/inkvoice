@@ -51,3 +51,42 @@ export async function logOut() {
   await supabase.auth.signOut();
   redirect("/login");
 }
+
+const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || "https://zarbill.com").replace(/\/$/, "");
+
+/**
+ * Change the logged-in user's password.
+ * Pass `current` from the Account page (we verify it first); omit it on the
+ * reset-password page, where the user arrived via the emailed reset link.
+ */
+export async function updatePassword(
+  next: string,
+  current?: string
+): Promise<{ ok: boolean; message: string }> {
+  if (!next || next.length < 6) return { ok: false, message: "New password must be at least 6 characters." };
+
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user?.email) return { ok: false, message: "Your session has expired. Please log in again." };
+
+  if (current !== undefined) {
+    const { error: checkErr } = await supabase.auth.signInWithPassword({ email: user.email, password: current });
+    if (checkErr) return { ok: false, message: "Your current password is incorrect." };
+    if (current === next) return { ok: false, message: "New password must be different from the current one." };
+  }
+
+  const { error } = await supabase.auth.updateUser({ password: next });
+  if (error) return { ok: false, message: error.message };
+  return { ok: true, message: "Password updated." };
+}
+
+/** Email a password-reset link. Always reports success so emails can't be probed. */
+export async function requestPasswordReset(formData: FormData): Promise<AuthResult> {
+  const email = String(formData.get("email") ?? "").trim();
+  if (!email) return { error: "Enter your email address." };
+  const supabase = await createClient();
+  await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: SITE_URL + "/auth/callback?next=/reset-password",
+  });
+  return {};
+}

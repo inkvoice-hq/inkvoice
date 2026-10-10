@@ -131,11 +131,12 @@ export default async function Landing() {
               Your business name, address and bank details sit on every invoice. Set them once in
               Settings.
             </Feature>
-            <Feature title="Rands or dollars">
+            <Feature title={isZA ? "Rands or dollars" : "Any currency"}>
               {isZA ? "Bill local clients in ZAR and international clients in USD, GBP, EUR and more." : "Bill each client in the currency they pay in: USD, GBP, EUR and more."}
             </Feature>
-            <Feature title="Overdue, flagged automatically">
-              An unpaid invoice past its due date marks itself overdue. Nothing slips.
+            <Feature title="Automatic payment reminders">
+              Late invoice? Zarbill politely chases your client for you at 3, 10 and 21 days
+              overdue, and shows you when they&apos;ve opened it.
             </Feature>
             <Feature title="Tax and discounts handled">
               Set a default VAT rate and it applies to new invoices. Add a discount per invoice
@@ -337,8 +338,12 @@ a { color: inherit; text-decoration: none; }
   transform: rotate(-13deg); opacity: .92;
 }
 .lp-section { max-width: 1120px; margin: 0 auto; padding: 90px 40px; }
-.lp-section-alt { border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); max-width: none; }
-.lp-section-alt > * { max-width: 1120px; margin-left: auto; margin-right: auto; }
+.lp-section-alt {
+  border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); max-width: none;
+  /* full-width borders, but content lines up with the 1120px sections around it */
+  padding-left: max(40px, calc((100% - 1040px) / 2));
+  padding-right: max(40px, calc((100% - 1040px) / 2));
+}
 .lp-h2 {
   font-family: 'Instrument Serif', serif; font-weight: 400; font-size: clamp(30px, 3.6vw, 42px);
   letter-spacing: -0.8px; margin: 0 0 14px;

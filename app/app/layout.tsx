@@ -4,6 +4,7 @@ import { sendWelcomeEmail } from "@/lib/email/welcome";
 import { createClient } from "@/lib/supabase/server";
 import { logOut } from "@/lib/auth/actions";
 import { NavLink } from "@/components/NavLink";
+import Link from "next/link";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const { tenantId, email } = await requireTenant();
@@ -53,18 +54,24 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             <div className="ink-nav-label">System</div>
             <NavLink href="/app/settings" icon="gear">Settings</NavLink>
             <NavLink href="/app/upgrade" icon="cart">Billing &amp; Plan</NavLink>
+            <NavLink href="/app/account" icon="user">Account</NavLink>
           </div>
 
           <div className="ink-sidebar-bottom">
-            <form action={logOut}>
-              <button className="ink-user-chip" type="submit" title="Click to log out">
+            <div className="ink-user-row">
+              <Link href="/app/account" className="ink-user-chip" title="Account and password">
                 <div className="ink-user-avatar">{initial}</div>
                 <div className="ink-user-info">
                   <div className="ink-user-name">{bizName}</div>
-                  <div className="ink-user-plan">{plan} · log out</div>
+                  <div className="ink-user-plan">{plan} · account</div>
                 </div>
-              </button>
-            </form>
+              </Link>
+              <form action={logOut}>
+                <button className="ink-logout" type="submit" title="Log out" aria-label="Log out">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                </button>
+              </form>
+            </div>
           </div>
         </nav>
 
@@ -136,6 +143,11 @@ body { margin: 0; background: var(--ink); color: var(--text); font-family: 'Syne
   border: none; text-align: left; font-family: 'Syne', sans-serif;
 }
 .ink-user-chip:hover { background: rgba(255,255,255,0.04); }
+a.ink-user-chip { text-decoration: none; min-width: 0; }
+.ink-user-row { display: flex; align-items: center; gap: 4px; }
+.ink-logout { background: none; border: none; color: var(--muted); cursor: pointer; padding: 9px; border-radius: 8px; display: flex; }
+.ink-logout:hover { background: rgba(255,107,107,0.1); color: var(--electric3); }
+.ink-logout svg { width: 17px; height: 17px; }
 .ink-user-avatar {
   width: 32px; height: 32px; border-radius: 50%;
   background: linear-gradient(135deg, var(--violet), var(--electric2));
@@ -149,6 +161,7 @@ body { margin: 0; background: var(--ink); color: var(--text); font-family: 'Syne
 @media (max-width: 900px) {
   .ink-sidebar { width: 68px; }
   .ink-brand-name, .ink-brand-tag, .ink-nav-item span, .ink-nav-label, .ink-user-info { display: none; }
+  .ink-user-row { flex-direction: column; }
   .ink-main { margin-left: 68px; }
 }
 `;

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Link from "next/link";
 import { signUp, logIn } from "@/lib/auth/actions";
 
 export default function LoginPage() {
@@ -49,6 +50,10 @@ export default function LoginPage() {
 
           <label style={styles.label}>PASSWORD</label>
           <input name="password" type="password" required minLength={6} placeholder="********" style={styles.input} />
+
+          {mode === "login" && (
+            <Link href="/forgot-password" style={styles.forgot}>Forgot password?</Link>
+          )}
 
           {error && <p style={styles.error}>{error}</p>}
           {pendingMsg && <p style={styles.ok}>{pendingMsg}</p>}
@@ -101,6 +106,7 @@ const styles: Record<string, React.CSSProperties> = {
     background: "#4fffb0", color: "#0a0a0d", fontWeight: 700, fontSize: 14, cursor: "pointer",
   },
   toggle: { color: "#4fffb0", textAlign: "center", cursor: "pointer", fontSize: 13, marginTop: 18 },
+  forgot: { display: "block", textAlign: "right", color: "#9898b8", fontSize: 12, marginTop: 8, textDecoration: "none" },
   error: { color: "#ff6b6b", fontSize: 13, marginTop: 14 },
   ok: { color: "#4fffb0", fontSize: 13, marginTop: 14 },
 };
