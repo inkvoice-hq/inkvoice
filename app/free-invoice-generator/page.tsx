@@ -66,7 +66,7 @@ export default async function Page() {
             invoices straight to clients, and see who has paid and who is overdue,
             Zarbill does that from a free account.
           </p>
-          <Link href="/login" className="gen-btn">Create a free account</Link>
+          <Link href="/login?mode=signup&from=generator" className="gen-btn">Create a free account</Link>
           <span className="gen-fine">Free plan: 3 clients, 5 invoices. No card required.</span>
         </div>
       </section>

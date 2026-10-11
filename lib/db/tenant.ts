@@ -1,4 +1,5 @@
 "use server";
+import { attempt, type Result } from "@/lib/result";
 
 import { createClient } from "@/lib/supabase/server";
 import { requireTenant } from "@/lib/db/context";
@@ -16,9 +17,14 @@ export async function getTenant(): Promise<Tenant | null> {
   return (data as Tenant) ?? null;
 }
 
-export async function updateTenantSettings(input: TenantSettingsInput): Promise<void> {
+async function updateTenantSettingsImpl(input: TenantSettingsInput): Promise<void> {
   const { tenantId } = await requireTenant();
   const supabase = await createClient();
+
+  const link = (input.payment_link || "").trim();
+  if (link && !/^https:\/\/[^\s]+\.[^\s]+$/i.test(link)) {
+    throw new Error("Payment link must be a full web address starting with https://");
+  }
 
   const { error } = await supabase
     .from("tenants")
@@ -36,13 +42,14 @@ export async function updateTenantSettings(input: TenantSettingsInput): Promise<
       next_invoice_number: Math.max(1, Math.floor(Number(input.next_invoice_number) || 1001)),
       invoice_notes: input.invoice_notes || null,
       footer_message: input.footer_message || null,
+      ...(input.payment_link !== undefined ? { payment_link: link || null } : {}),
     })
     .eq("id", tenantId);
 
   if (error) throw new Error(error.message);
 }
 
-export async function setRemindersEnabled(enabled: boolean): Promise<void> {
+async function setRemindersEnabledImpl(enabled: boolean): Promise<void> {
   const { tenantId } = await requireTenant();
   const supabase = await createClient();
   const { error } = await supabase
@@ -50,4 +57,13 @@ export async function setRemindersEnabled(enabled: boolean): Promise<void> {
     .update({ reminders_enabled: !!enabled })
     .eq("id", tenantId);
   if (error) throw new Error(error.message);
+}
+
+// ---- Actions called from the browser (errors returned, not thrown) ----
+export async function updateTenantSettings(input: TenantSettingsInput): Promise<Result<void>> {
+  return attempt(() => updateTenantSettingsImpl(input));
+}
+
+export async function setRemindersEnabled(enabled: boolean): Promise<Result<void>> {
+  return attempt(() => setRemindersEnabledImpl(enabled));
 }

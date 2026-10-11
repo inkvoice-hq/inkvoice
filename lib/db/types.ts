@@ -20,6 +20,8 @@ export interface Tenant {
   invoice_notes: string | null;
   footer_message: string | null;
   reminders_enabled: boolean;
+  payment_link: string | null;
+  next_quote_number: number;
   plan: Plan;
   created_at: string;
   updated_at: string;
@@ -80,8 +82,74 @@ export interface Invoice {
   viewed_at: string | null;
   reminders_sent: number;
   last_reminder_at: string | null;
+  amount_paid: number;
+  quote_id: string | null;
+  recur_next_date: string | null;
+  recur_parent_id: string | null;
+  recur_auto_send: boolean;
+  scheduled_send_date: string | null;
+  sent_at: string | null;
+  due_soon_sent: boolean;
   created_at: string;
   updated_at: string;
+}
+
+export interface Payment {
+  id: string;
+  tenant_id: string;
+  invoice_id: string;
+  amount: number;
+  paid_on: string;
+  method: string | null;
+  note: string | null;
+  created_at: string;
+}
+
+export type QuoteStatus = "draft" | "sent" | "accepted" | "declined" | "converted";
+
+export interface Quote {
+  id: string;
+  tenant_id: string;
+  client_id: string | null;
+  number: string;
+  issue_date: string | null;
+  valid_until: string | null;
+  description: string | null;
+  status: QuoteStatus;
+  tax_rate: number;
+  discount: number;
+  notes: string | null;
+  items: InvoiceItem[];
+  subtotal: number;
+  total: number;
+  public_token: string;
+  sent_at: string | null;
+  viewed_at: string | null;
+  accepted_at: string | null;
+  declined_at: string | null;
+  converted_invoice_id: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface QuoteFormInput {
+  client_id: string | null;
+  number: string;
+  issue_date: string | null;
+  valid_until: string | null;
+  description: string | null;
+  tax_rate: number;
+  discount: number;
+  notes: string | null;
+  items: InvoiceItem[];
+}
+
+export interface PaymentInput {
+  invoice_id: string;
+  amount: number;
+  paid_on: string;
+  method: string | null;
+  note: string | null;
 }
 
 export interface Subscription {
@@ -101,7 +169,6 @@ export interface Subscription {
 
 export type ClientInput = Omit<Client, "id" | "tenant_id" | "created_at" | "updated_at">;
 export type ProductInput = Omit<Product, "id" | "tenant_id" | "created_at">;
-export type InvoiceInput = Omit<Invoice, "id" | "tenant_id" | "created_at" | "updated_at" | "public_token" | "viewed_at" | "reminders_sent" | "last_reminder_at">;
 
 export interface InvoiceFormInput {
   client_id: string | null;
@@ -115,6 +182,8 @@ export interface InvoiceFormInput {
   discount: number;
   notes: string | null;
   recurring: string | null;
+  recur_auto_send?: boolean;
+  scheduled_send_date?: string | null;
   items: InvoiceItem[];
 }
 
@@ -132,4 +201,5 @@ export interface TenantSettingsInput {
   next_invoice_number: number;
   invoice_notes: string | null;
   footer_message: string | null;
+  payment_link?: string | null;
 }

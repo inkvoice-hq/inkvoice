@@ -28,7 +28,7 @@ export async function requireTenant(): Promise<AuthContext> {
 
   if (!tenantId) {
     const { data: newTenantId, error } = await supabase.rpc("bootstrap_tenant", {
-      p_business_name: "My Business",
+      p_business_name: String(user.user_metadata?.business_name || "My Business").slice(0, 120),
       p_email: user.email ?? null,
     });
     if (error || !newTenantId) {

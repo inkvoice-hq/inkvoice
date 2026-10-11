@@ -145,8 +145,18 @@ export default async function Landing() {
             <Feature title="Works on your phone">
               Your data lives in your account, not your browser. Log in anywhere and it&apos;s there.
             </Feature>
-            <Feature title="Save as PDF">
-              Preview the finished invoice and export it, ready to email to your client.
+            <Feature title="Quotes that become invoices">
+              Send a quote, your client accepts it online, and it turns into an invoice in one
+              click. Nothing to retype.
+            </Feature>
+            <Feature title="Get paid online">
+              {isZA
+                ? "Add your PayPal, Yoco, SnapScan or Paystack link and every invoice gets a Pay now button. Part-payments are tracked to the cent."
+                : "Add your PayPal, Stripe or any payment link and every invoice gets a Pay now button. Part-payments are tracked to the cent."}
+            </Feature>
+            <Feature title="Recurring invoices">
+              Monthly retainer? The next invoice creates and sends itself, on schedule, with
+              reminders if it&apos;s late.
             </Feature>
           </div>
         </section>
@@ -163,8 +173,8 @@ export default async function Landing() {
               <ul>
                 <li>3 clients</li>
                 <li>5 invoices</li>
-                <li>Saved services</li>
-                <li>PDF export</li>
+                <li>Quotes, reminders &amp; Pay now links</li>
+                <li>PDF and CSV export</li>
               </ul>
               <Link href="/login" className="lp-btn-ghost lp-btn-block">Create account</Link>
             </div>
@@ -177,7 +187,7 @@ export default async function Landing() {
               <ul>
                 <li>Unlimited clients</li>
                 <li>Unlimited invoices</li>
-                <li>Unlimited saved services</li>
+                <li>Unlimited recurring invoices</li>
                 <li>Multi-currency invoicing</li>
                 <li>Custom business branding</li>
               </ul>
@@ -200,6 +210,15 @@ export default async function Landing() {
             Prices include VAT where applicable. Cancel anytime — see our{" "}
             <Link href="/refund-policy">refund and cancellation policy</Link>.
             Payments are processed securely by Paystack.
+          </p>
+        </section>
+
+        <section className="lp-section lp-switch">
+          <h2 className="lp-h2">Switching is painless</h2>
+          <p className="lp-lede">
+            Export your clients and invoices from Wave, Zoho, FreshBooks, QuickBooks or a spreadsheet as
+            CSV, and import them in a couple of minutes. Already made an invoice with our{" "}
+            <Link href="/free-invoice-generator">free generator</Link>? Save it to an account and it comes with you.
           </p>
         </section>
 
@@ -349,6 +368,9 @@ a { color: inherit; text-decoration: none; }
   letter-spacing: -0.8px; margin: 0 0 14px;
 }
 .lp-lede { color: var(--muted); font-size: 16px; margin: 0 0 40px; }
+.lp-switch { padding-top: 0; }
+.lp-switch .lp-lede { max-width: 46em; margin-bottom: 0; line-height: 1.7; }
+.lp-switch a { color: var(--green); }
 .lp-steps { list-style: none; padding: 0; margin: 38px 0 0; display: grid; grid-template-columns: repeat(3,1fr); gap: 34px; }
 .lp-steps li { border-top: 1px solid var(--line2); padding-top: 20px; }
 .lp-step-n { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--green); letter-spacing: 1.5px; }

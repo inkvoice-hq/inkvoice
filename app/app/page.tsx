@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { listClients } from "@/lib/db/clients";
 import { listInvoices } from "@/lib/db/invoices";
 import { listProducts } from "@/lib/db/products";
-import { money, displayStatus } from "@/lib/format";
+import { money, displayStatus, balanceDue } from "@/lib/format";
 
 export default async function DashboardPage() {
   const { email, tenantId } = await requireTenant();
@@ -19,13 +19,12 @@ export default async function DashboardPage() {
 
   const outstanding = invoices
     .filter((i) => i.status !== "paid" && i.status !== "draft")
-    .reduce((s, i) => s + Number(i.total || 0), 0);
+    .reduce((s, i) => s + balanceDue(i), 0);
   const overdue = invoices.filter(
     (i) => displayStatus(i.status, i.due_date) === "overdue"
   ).length;
-  const paidTotal = invoices
-    .filter((i) => i.status === "paid")
-    .reduce((s, i) => s + Number(i.total || 0), 0);
+  // Every payment received, including part-payments on unpaid invoices.
+  const paidTotal = invoices.reduce((s, i) => s + Number(i.amount_paid || 0), 0);
 
   return (
     <>

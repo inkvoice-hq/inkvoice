@@ -1,4 +1,5 @@
 "use server";
+import { attempt, type Result } from "@/lib/result";
 
 import { createClient } from "@/lib/supabase/server";
 import { requireTenant } from "@/lib/db/context";
@@ -16,7 +17,7 @@ export async function listProducts(): Promise<Product[]> {
   return (data ?? []) as Product[];
 }
 
-export async function createProduct_(input: ProductInput): Promise<Product> {
+async function createProduct_Impl(input: ProductInput): Promise<Product> {
   const { tenantId } = await requireTenant();
   const supabase = await createClient();
   const { data, error } = await supabase
@@ -28,7 +29,7 @@ export async function createProduct_(input: ProductInput): Promise<Product> {
   return data as Product;
 }
 
-export async function updateProduct(id: string, input: Partial<ProductInput>): Promise<Product> {
+async function updateProductImpl(id: string, input: Partial<ProductInput>): Promise<Product> {
   const { tenantId } = await requireTenant();
   const supabase = await createClient();
   const { data, error } = await supabase
@@ -42,7 +43,7 @@ export async function updateProduct(id: string, input: Partial<ProductInput>): P
   return data as Product;
 }
 
-export async function deleteProduct(id: string): Promise<void> {
+async function deleteProductImpl(id: string): Promise<void> {
   const { tenantId } = await requireTenant();
   const supabase = await createClient();
   const { error } = await supabase
@@ -51,4 +52,17 @@ export async function deleteProduct(id: string): Promise<void> {
     .eq("tenant_id", tenantId)
     .eq("id", id);
   if (error) throw new Error(error.message);
+}
+
+// ---- Actions called from the browser (errors returned, not thrown) ----
+export async function createProduct_(input: ProductInput): Promise<Result<Product>> {
+  return attempt(() => createProduct_Impl(input));
+}
+
+export async function updateProduct(id: string, input: Partial<ProductInput>): Promise<Result<Product>> {
+  return attempt(() => updateProductImpl(id, input));
+}
+
+export async function deleteProduct(id: string): Promise<Result<void>> {
+  return attempt(() => deleteProductImpl(id));
 }

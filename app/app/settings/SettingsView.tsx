@@ -1,5 +1,6 @@
 "use client";
 
+import { unwrap } from "@/lib/result";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Tenant, TenantSettingsInput } from "@/lib/db/types";
@@ -33,6 +34,7 @@ export function SettingsView({ tenant }: { tenant: Tenant }) {
     next_invoice_number: tenant.next_invoice_number ?? 1001,
     invoice_notes: tenant.invoice_notes ?? "",
     footer_message: tenant.footer_message ?? "",
+    payment_link: tenant.payment_link ?? "",
   });
 
   function set<K extends keyof TenantSettingsInput>(k: K, v: TenantSettingsInput[K]) {
@@ -43,7 +45,7 @@ export function SettingsView({ tenant }: { tenant: Tenant }) {
     if (!f.name.trim()) { setErr("Business name is required."); setMsg(null); return; }
     setBusy(true); setErr(null); setMsg(null);
     try {
-      await updateTenantSettings(f);
+      unwrap(await updateTenantSettings(f));
       setMsg("Settings saved.");
       router.refresh();
     } catch (e: any) {
@@ -55,7 +57,7 @@ export function SettingsView({ tenant }: { tenant: Tenant }) {
     const next = !remOn;
     setRemBusy(true); setRemMsg(null);
     try {
-      await setRemindersEnabled(next);
+      unwrap(await setRemindersEnabled(next));
       setRemOn(next);
       setRemMsg(next ? "Automatic reminders are on." : "Automatic reminders are off.");
       router.refresh();
@@ -149,6 +151,7 @@ export function SettingsView({ tenant }: { tenant: Tenant }) {
                   </button>
                   {remMsg && <p className="ink-ok" style={{ marginTop: 12 }}>{remMsg}</p>}
                   <div className="ink-sched">
+                    <div><b>3 days before</b> the due date<span>Heads-up: payment due soon</span></div>
                     <div><b>3 days</b> after the due date<span>Friendly reminder</span></div>
                     <div><b>10 days</b> after the due date<span>Firmer: &ldquo;this invoice is overdue&rdquo;</span></div>
                     <div><b>21 days</b> after the due date<span>Final reminder</span></div>
@@ -156,7 +159,9 @@ export function SettingsView({ tenant }: { tenant: Tenant }) {
                   <p className="ink-hint" style={{ marginTop: 18, marginBottom: 0 }}>
                     Emails go out under your business name with a link to the invoice, and your client&rsquo;s
                     replies go straight to {tenant.email ? <strong>{tenant.email}</strong> : "your business email (add it under Business)"}.
-                    Reminders stop the moment you mark an invoice paid. In your invoice list you&rsquo;ll see
+                    Every email includes a <strong>Pay now</strong> button when you&apos;ve added a payment link
+                    (Invoice Defaults), and shows the balance still owed after any part-payments.
+                    Reminders stop the moment an invoice is paid in full. In your invoice list you&rsquo;ll see
                     when a client has <strong>viewed</strong> the invoice and how many reminders were sent.
                   </p>
                 </div>
@@ -197,6 +202,15 @@ export function SettingsView({ tenant }: { tenant: Tenant }) {
                     ph="Bank name / Account number / Reference: invoice number" area />
                   <F label="Invoice Footer Message" v={f.footer_message ?? ""} on={(v) => set("footer_message", v)}
                     ph="Thank you for your business!" />
+                  <F label="Online payment link (optional)" v={f.payment_link ?? ""} on={(v) => set("payment_link", v)}
+                    ph="https://paypal.me/yourname/{amount}" />
+                  <p className="ink-hint" style={{ marginTop: -8 }}>
+                    Paste a link from PayPal, Yoco, SnapScan, a Paystack payment page, Stripe or any service you
+                    already use. A <strong>Pay now</strong> button then appears on every invoice, email and reminder.
+                    Optional: put <code>{"{amount}"}</code> or <code>{"{invoice}"}</code> in the link and Zarbill fills
+                    in the balance due or invoice number (handy for PayPal.me links). When a client pays, record it
+                    with the <strong>Payments</strong> button on the invoice.
+                  </p>
                 </div>
               </>
             )}

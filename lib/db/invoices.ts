@@ -1,26 +1,29 @@
 "use server";
+import { attempt, type Result } from "@/lib/result";
 
 import { createClient } from "@/lib/supabase/server";
 import { requireTenant } from "@/lib/db/context";
 import { assertCanCreate } from "@/lib/db/guard";
-import { round2 } from "@/lib/format";
-import type { Invoice, InvoiceItem, InvoiceFormInput } from "@/lib/db/types";
+import { round2, addInterval, todayISO } from "@/lib/format";
+import { computeTotals } from "@/lib/totals";
+import { recalcInvoice, payRemainingBalance } from "@/lib/db/ledger";
+import type { Invoice, InvoiceFormInput } from "@/lib/db/types";
 
-function computeTotals(items: InvoiceItem[], taxRate: number, discount: number) {
-  const clean: InvoiceItem[] = (items ?? [])
-    .filter((i) => (i?.desc ?? "").trim() !== "" || Number(i?.qty) || Number(i?.rate))
-    .map((i) => {
-      const qty = round2(Number(i.qty) || 0);
-      const rate = round2(Number(i.rate) || 0);
-      return { desc: String(i.desc ?? ""), qty, rate, total: round2(qty * rate) };
-    });
 
-  const subtotal = round2(clean.reduce((s, i) => s + i.total, 0));
-  const tax = round2(subtotal * ((Number(taxRate) || 0) / 100));
-  const disc = round2(Number(discount) || 0);
-  const total = round2(Math.max(0, subtotal + tax - disc));
+const RECURRING_OK = ["weekly", "monthly", "quarterly", "annually"];
 
-  return { items: clean, subtotal, total };
+/** First date in the series (anchor + k intervals) that falls after `after`. */
+function nextOccurrence(anchor: string | null, recurring: string | null, after = todayISO()): string | null {
+  if (!anchor || !recurring || !RECURRING_OK.includes(recurring)) return null;
+  for (let k = 1; k < 2000; k++) {
+    const d = addInterval(anchor, recurring, k);
+    if (d > after) return d;
+  }
+  return null;
+}
+
+function cleanDate(d: string | null | undefined): string | null {
+  return d && /^\d{4}-\d{2}-\d{2}$/.test(d) ? d : null;
 }
 
 export async function listInvoices(): Promise<Invoice[]> {
@@ -61,7 +64,7 @@ export async function nextInvoiceNumber(): Promise<string> {
   return `INV-${n}`;
 }
 
-export async function createInvoice_(input: InvoiceFormInput): Promise<Invoice> {
+async function createInvoice_Impl(input: InvoiceFormInput): Promise<Invoice> {
   await assertCanCreate("invoices");
   const { tenantId } = await requireTenant();
   const supabase = await createClient();
@@ -83,6 +86,9 @@ export async function createInvoice_(input: InvoiceFormInput): Promise<Invoice> 
       discount: round2(Number(input.discount) || 0),
       notes: input.notes || null,
       recurring: input.recurring || null,
+      recur_next_date: nextOccurrence(input.issue_date, input.recurring),
+      recur_auto_send: input.recur_auto_send !== false,
+      scheduled_send_date: input.status === "paid" ? null : cleanDate(input.scheduled_send_date),
       items,
       subtotal,
       total,
@@ -93,6 +99,10 @@ export async function createInvoice_(input: InvoiceFormInput): Promise<Invoice> 
   if (error) {
     if (error.code === "23505") throw new Error(`Invoice number "${input.number}" already exists.`);
     throw new Error(error.message);
+  }
+
+  if (input.status === "paid") {
+    await payRemainingBalance(supabase, tenantId, data.id, input.paid_date || input.issue_date);
   }
 
   const match = input.number.trim().match(/(\d+)\s*$/);
@@ -110,11 +120,30 @@ export async function createInvoice_(input: InvoiceFormInput): Promise<Invoice> 
   return data as Invoice;
 }
 
-export async function updateInvoice(id: string, input: InvoiceFormInput): Promise<Invoice> {
+async function updateInvoiceImpl(id: string, input: InvoiceFormInput): Promise<Invoice> {
   const { tenantId } = await requireTenant();
   const supabase = await createClient();
 
   const { items, subtotal, total } = computeTotals(input.items, input.tax_rate, input.discount);
+
+  const { data: before } = await supabase
+    .from("invoices").select("status, recurring, issue_date, recur_next_date")
+    .eq("tenant_id", tenantId).eq("id", id).maybeSingle();
+  if (!before) throw new Error("Invoice not found.");
+
+  // Un-marking a paid invoice removes the quick "Marked paid" entries.
+  // Real recorded payments stay; remove those from the Payments panel.
+  if (before.status === "paid" && input.status !== "paid") {
+    await supabase.from("payments").delete()
+      .eq("tenant_id", tenantId).eq("invoice_id", id).in("method", ["Marked paid", "Recorded"]);
+  }
+
+  const recurringChanged = (before.recurring || "") !== (input.recurring || "") || before.issue_date !== (input.issue_date || null);
+  const recur_next_date = !input.recurring
+    ? null
+    : recurringChanged || !before.recur_next_date
+      ? nextOccurrence(input.issue_date, input.recurring)
+      : before.recur_next_date;
 
   const { data, error } = await supabase
     .from("invoices")
@@ -130,6 +159,9 @@ export async function updateInvoice(id: string, input: InvoiceFormInput): Promis
       discount: round2(Number(input.discount) || 0),
       notes: input.notes || null,
       recurring: input.recurring || null,
+      recur_next_date,
+      recur_auto_send: input.recur_auto_send !== false,
+      scheduled_send_date: input.status === "paid" ? null : cleanDate(input.scheduled_send_date),
       items,
       subtotal,
       total,
@@ -143,21 +175,19 @@ export async function updateInvoice(id: string, input: InvoiceFormInput): Promis
     if (error.code === "23505") throw new Error(`Invoice number "${input.number}" already exists.`);
     throw new Error(error.message);
   }
+
+  if (input.status === "paid") await payRemainingBalance(supabase, tenantId, id, input.paid_date || todayISO());
+  else await recalcInvoice(supabase, tenantId, id);
   return data as Invoice;
 }
 
-export async function markInvoicePaid(id: string): Promise<void> {
+async function markInvoicePaidImpl(id: string): Promise<void> {
   const { tenantId } = await requireTenant();
   const supabase = await createClient();
-  const { error } = await supabase
-    .from("invoices")
-    .update({ status: "paid", paid_date: new Date().toISOString().slice(0, 10) })
-    .eq("tenant_id", tenantId)
-    .eq("id", id);
-  if (error) throw new Error(error.message);
+  await payRemainingBalance(supabase, tenantId, id);
 }
 
-export async function deleteInvoice(id: string): Promise<void> {
+async function deleteInvoiceImpl(id: string): Promise<void> {
   const { tenantId } = await requireTenant();
   const supabase = await createClient();
   const { error } = await supabase
@@ -166,4 +196,21 @@ export async function deleteInvoice(id: string): Promise<void> {
     .eq("tenant_id", tenantId)
     .eq("id", id);
   if (error) throw new Error(error.message);
+}
+
+// ---- Actions called from the browser (errors returned, not thrown) ----
+export async function createInvoice_(input: InvoiceFormInput): Promise<Result<Invoice>> {
+  return attempt(() => createInvoice_Impl(input));
+}
+
+export async function updateInvoice(id: string, input: InvoiceFormInput): Promise<Result<Invoice>> {
+  return attempt(() => updateInvoiceImpl(id, input));
+}
+
+export async function markInvoicePaid(id: string): Promise<Result<void>> {
+  return attempt(() => markInvoicePaidImpl(id));
+}
+
+export async function deleteInvoice(id: string): Promise<Result<void>> {
+  return attempt(() => deleteInvoiceImpl(id));
 }

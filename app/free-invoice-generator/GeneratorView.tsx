@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
+import { readDraft, writeDraft, draftHasContent, type GeneratorDraft } from "@/lib/draft";
 
 const SYMBOLS: Record<string, string> = { USD: "$", GBP: "£", EUR: "€", AUD: "A$", CAD: "C$", ZAR: "R" };
 
@@ -33,6 +34,40 @@ export function GeneratorView({ defaultCurrency = "USD" }: { defaultCurrency?: s
   const [items, setItems] = useState<Item[]>([{ desc: "", qty: 1, rate: 0 }]);
   const [taxRate, setTaxRate] = useState(0);
   const [notes, setNotes] = useState("");
+
+  // Keep the draft in this browser so it survives a refresh and can be
+  // saved into a free account after sign-up.
+  const restored = useRef(false);
+  useEffect(() => {
+    const d = readDraft();
+    if (d && draftHasContent(d)) {
+      if (SYMBOLS[d.cur]) setCur(d.cur);
+      setFrom({ name: d.from?.name || "", email: d.from?.email || "", address: d.from?.address || "", vat: d.from?.vat || "" });
+      setTo({ name: d.to?.name || "", email: d.to?.email || "", address: d.to?.address || "" });
+      if (d.num) setNum(d.num);
+      if (d.issued) setIssued(d.issued);
+      if (d.due) setDue(d.due);
+      if (d.items?.length) setItems(d.items.map((i) => ({ desc: i.desc || "", qty: Number(i.qty) || 0, rate: Number(i.rate) || 0 })));
+      setTaxRate(Number(d.taxRate) || 0);
+      setNotes(d.notes || "");
+    }
+    restored.current = true;
+  }, []);
+
+  const draft: GeneratorDraft = useMemo(() => ({
+    v: 1, cur, from, to, num, issued, due, items, taxRate, notes, savedAt: new Date().toISOString(),
+  }), [cur, from, to, num, issued, due, items, taxRate, notes]);
+
+  useEffect(() => {
+    if (!restored.current) return;
+    const t = setTimeout(() => { if (draftHasContent(draft)) writeDraft(draft); }, 400);
+    return () => clearTimeout(t);
+  }, [draft]);
+
+  function saveToAccount() {
+    writeDraft(draft);
+    window.location.href = "/login?mode=signup&from=generator";
+  }
 
   const totals = useMemo(() => {
     const sub = items.reduce((s, i) => s + (Number(i.qty) || 0) * (Number(i.rate) || 0), 0);
@@ -121,7 +156,14 @@ export function GeneratorView({ defaultCurrency = "USD" }: { defaultCurrency?: s
         </label>
 
         <button className="gen-print" onClick={() => window.print()}>Download as PDF</button>
-        <p className="gen-fine">Opens your print dialog — choose &ldquo;Save as PDF&rdquo;. Nothing is uploaded or stored.</p>
+        <button className="gen-save" onClick={saveToAccount}>
+          Save this invoice to a free account
+        </button>
+        <p className="gen-fine">
+          PDF opens your print dialog — choose &ldquo;Save as PDF&rdquo;. Your draft stays in this browser
+          only. Saving to a free account keeps the invoice and your client, so you can email it, send
+          reminders and track payment. No card needed.
+        </p>
       </div>
 
       <div className="gen-preview">

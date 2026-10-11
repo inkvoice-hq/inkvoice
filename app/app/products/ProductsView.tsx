@@ -1,5 +1,6 @@
 "use client";
 
+import { unwrap } from "@/lib/result";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Product, ProductInput } from "@/lib/db/types";
@@ -39,8 +40,8 @@ export function ProductsView({ initialProducts }: { initialProducts: Product[] }
     setBusy(true); setErr(null);
     try {
       const payload = { ...form, price: Number(form.price) || 0 };
-      if (editId) await updateProduct(editId, payload);
-      else await createProduct_(payload);
+      if (editId) unwrap(await updateProduct(editId, payload));
+      else unwrap(await createProduct_(payload));
       setModalOpen(false);
       router.refresh();
     } catch (e: any) {
@@ -51,7 +52,7 @@ export function ProductsView({ initialProducts }: { initialProducts: Product[] }
   async function remove(id: string) {
     if (!confirm("Delete this service?")) return;
     setBusy(true);
-    try { await deleteProduct(id); router.refresh(); }
+    try { unwrap(await deleteProduct(id)); router.refresh(); }
     catch (e: any) { alert(e?.message || "Delete failed."); }
     finally { setBusy(false); }
   }

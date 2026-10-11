@@ -1,11 +1,14 @@
 "use client";
 
+import { unwrap } from "@/lib/result";
 import { useState, useMemo } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import type { Invoice, InvoiceItem, Client, Product, InvoiceFormInput } from "@/lib/db/types";
+import type { Invoice, InvoiceItem, Client, Product, InvoiceFormInput, Payment } from "@/lib/db/types";
+import { listPayments, recordPayment, deletePayment } from "@/lib/db/payments";
 import { createInvoice_, updateInvoice, deleteInvoice, markInvoicePaid } from "@/lib/db/invoices";
 import { sendInvoiceEmail } from "@/lib/email/invoice";
-import { money, round2, todayISO, addDaysISO, displayStatus } from "@/lib/format";
+import { money, round2, todayISO, addDaysISO, displayStatus, balanceDue } from "@/lib/format";
 
 type TenantLite = {
   name: string | null; logo_url: string | null; email: string | null; address: string | null; phone: string | null;
@@ -15,13 +18,22 @@ type TenantLite = {
 
 const STATUSES = ["draft", "unpaid", "paid"];
 const RECURRING = ["", "weekly", "monthly", "quarterly", "annually"];
+const PAY_METHODS = ["Bank transfer", "Card / online", "Cash", "PayPal", "Other"];
+type Tab = "all" | "draft" | "unpaid" | "partial" | "paid" | "overdue";
+
+function shortDate(d: string | null): string {
+  if (!d) return "";
+  const m = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const [y, mo, da] = d.slice(0, 10).split("-");
+  return parseInt(da, 10) + " " + m[parseInt(mo, 10) - 1] + " " + y;
+}
 
 function emptyForm(num: string, terms: number, taxRate: number, notes: string): InvoiceFormInput {
   return {
     client_id: null, number: num, issue_date: todayISO(),
     due_date: addDaysISO(terms || 30), paid_date: null, description: "",
     status: "draft", tax_rate: taxRate || 0, discount: 0,
-    notes: notes || "", recurring: "",
+    notes: notes || "", recurring: "", recur_auto_send: true, scheduled_send_date: "",
     items: [{ desc: "", qty: 1, rate: 0, total: 0 }],
   };
 }
@@ -35,7 +47,12 @@ export function InvoicesView({
   const router = useRouter();
   const currency = tenant?.currency ?? "USD";
   const invoices = initialInvoices;
-  const [tab, setTab] = useState<"all" | "draft" | "unpaid" | "paid" | "overdue">("all");
+  const [tab, setTab] = useState<Tab>("all");
+  const [payInvId, setPayInvId] = useState<string | null>(null);
+  const [payments, setPayments] = useState<Payment[]>([]);
+  const [payLoading, setPayLoading] = useState(false);
+  const [payForm, setPayForm] = useState({ amount: "", paid_on: todayISO(), method: PAY_METHODS[0], note: "" });
+  const [payErr, setPayErr] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [previewId, setPreviewId] = useState<string | null>(null);
   const [editId, setEditId] = useState<string | null>(null);
@@ -49,7 +66,7 @@ export function InvoicesView({
 
   const filtered = useMemo(() => {
     if (tab === "all") return invoices;
-    return invoices.filter((i) => displayStatus(i.status, i.due_date) === tab);
+    return invoices.filter((i) => displayStatus(i.status, i.due_date, i.amount_paid) === tab);
   }, [invoices, tab]);
 
   const totals = useMemo(() => {
@@ -73,6 +90,7 @@ export function InvoicesView({
       description: inv.description ?? "", status: inv.status,
       tax_rate: Number(inv.tax_rate) || 0, discount: Number(inv.discount) || 0,
       notes: inv.notes ?? "", recurring: inv.recurring ?? "",
+      recur_auto_send: inv.recur_auto_send !== false, scheduled_send_date: inv.scheduled_send_date ?? "",
       items: (inv.items ?? []).length ? inv.items : [{ desc: "", qty: 1, rate: 0, total: 0 }],
     });
     setErr(null); setModalOpen(true);
@@ -126,8 +144,8 @@ export function InvoicesView({
     }
     setBusy(true); setErr(null);
     try {
-      if (editId) await updateInvoice(editId, form);
-      else await createInvoice_(form);
+      if (editId) unwrap(await updateInvoice(editId, form));
+      else unwrap(await createInvoice_(form));
       setModalOpen(false);
       router.refresh();
     } catch (e: any) {
@@ -157,9 +175,45 @@ export function InvoicesView({
     }
   }
 
+  async function openPayments(inv: Invoice) {
+    setPayInvId(inv.id); setPayErr(null); setPayLoading(true); setPayments([]);
+    setPayForm({ amount: balanceDue(inv).toFixed(2), paid_on: todayISO(), method: PAY_METHODS[0], note: "" });
+    try { setPayments(await listPayments(inv.id)); }
+    catch (e: any) { setPayErr(e?.message || "Could not load payments."); }
+    finally { setPayLoading(false); }
+  }
+
+  async function onRecordPayment() {
+    if (!payInvId) return;
+    setPayErr(null); setPayLoading(true);
+    try {
+      unwrap(await recordPayment({
+        invoice_id: payInvId, amount: parseFloat(payForm.amount) || 0,
+        paid_on: payForm.paid_on, method: payForm.method, note: payForm.note,
+      }));
+      setPayments(await listPayments(payInvId));
+      setPayForm((f) => ({ ...f, amount: "", note: "" }));
+      router.refresh();
+    } catch (e: any) {
+      setPayErr(e?.message || "Could not record payment.");
+    } finally { setPayLoading(false); }
+  }
+
+  async function onDeletePayment(id: string) {
+    if (!payInvId || !confirm("Remove this payment?")) return;
+    setPayLoading(true); setPayErr(null);
+    try {
+      unwrap(await deletePayment(id));
+      setPayments(await listPayments(payInvId));
+      router.refresh();
+    } catch (e: any) {
+      setPayErr(e?.message || "Could not remove payment.");
+    } finally { setPayLoading(false); }
+  }
+
   async function onMarkPaid(id: string) {
     setBusy(true);
-    try { await markInvoicePaid(id); router.refresh(); }
+    try { unwrap(await markInvoicePaid(id)); router.refresh(); }
     catch (e: any) { alert(e?.message || "Failed."); }
     finally { setBusy(false); }
   }
@@ -167,28 +221,33 @@ export function InvoicesView({
   async function onDelete(id: string) {
     if (!confirm("Delete this invoice permanently?")) return;
     setBusy(true);
-    try { await deleteInvoice(id); router.refresh(); }
+    try { unwrap(await deleteInvoice(id)); router.refresh(); }
     catch (e: any) { alert(e?.message || "Delete failed."); }
     finally { setBusy(false); }
   }
 
   const previewInv = previewId ? invoices.find((i) => i.id === previewId) ?? null : null;
+  const payInv = payInvId ? invoices.find((i) => i.id === payInvId) ?? null : null;
 
   return (
     <>
-      <style>{css}</style>
+      <style>{invoiceCss}</style>
 
       <div className="ink-topbar">
         <div className="ink-tb-title">Invoices</div>
+        <div className="ink-tb-actions">
+        <Link className="ink-btn ink-btn-ghost ink-btn-sm ink-hide-sm" href="/app/import?type=invoices">Import</Link>
+        <a className="ink-btn ink-btn-ghost ink-btn-sm ink-hide-sm" href="/app/export/invoices">Export CSV</a>
         <button className="ink-btn ink-btn-primary" onClick={openNew}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
           New Invoice
         </button>
+        </div>
       </div>
 
       <div className="ink-page">
         <div className="ink-tabbar">
-          {(["all", "draft", "unpaid", "paid", "overdue"] as const).map((t) => (
+          {(["all", "draft", "unpaid", "partial", "paid", "overdue"] as const).map((t) => (
             <div key={t} className={"ink-tab" + (tab === t ? " active" : "")} onClick={() => setTab(t)}>
               {t.charAt(0).toUpperCase() + t.slice(1)}
             </div>
@@ -215,21 +274,27 @@ export function InvoicesView({
                 </thead>
                 <tbody>
                   {filtered.map((inv) => {
-                    const st = displayStatus(inv.status, inv.due_date);
+                    const st = displayStatus(inv.status, inv.due_date, inv.amount_paid);
+                    const bal = balanceDue(inv);
                     return (
                       <tr key={inv.id}>
                         <td><strong className="ink-mono">{inv.number}</strong>{inv.recurring ? <span className="ink-recur">{inv.recurring}</span> : null}</td>
                         <td>{clientName(inv.client_id)}</td>
                         <td className="ink-muted ink-trunc">{inv.description || "—"}</td>
-                        <td className="ink-mono ink-bold">{money(inv.total, currency)}</td>
+                        <td className="ink-mono ink-bold">
+                          {money(inv.total, currency)}
+                          {st !== "paid" && Number(inv.amount_paid) > 0 && <div className="ink-due-sub">{money(bal, currency)} due</div>}
+                        </td>
                         <td className="ink-muted ink-mono ink-sm">{inv.issue_date || "—"}</td>
                         <td className="ink-muted ink-mono ink-sm">{inv.due_date || "—"}</td>
                         <td>
                           <span className={"ink-badge b-" + st}>{st}</span>
-                          {inv.status !== "draft" && inv.status !== "paid" && (inv.viewed_at || inv.reminders_sent > 0) && (
+                          {((inv.status !== "draft" && inv.status !== "paid" && (inv.viewed_at || inv.reminders_sent > 0)) || inv.recurring || inv.scheduled_send_date) && (
                             <div className="ink-track">
-                              {inv.viewed_at && <span className="v" title={"Client opened it on " + inv.viewed_at.slice(0, 10)}>&#9679; Viewed</span>}
-                              {inv.reminders_sent > 0 && <span>{inv.reminders_sent} reminder{inv.reminders_sent === 1 ? "" : "s"} sent</span>}
+                              {inv.status !== "paid" && inv.viewed_at && <span className="v" title={"Client opened it on " + inv.viewed_at.slice(0, 10)}>&#9679; Viewed</span>}
+                              {inv.status !== "paid" && inv.reminders_sent > 0 && <span>{inv.reminders_sent} reminder{inv.reminders_sent === 1 ? "" : "s"} sent</span>}
+                              {inv.scheduled_send_date && !inv.sent_at && <span className="s">Sends {shortDate(inv.scheduled_send_date)}</span>}
+                              {inv.recurring && inv.recur_next_date && <span className="r">Next copy {shortDate(inv.recur_next_date)}</span>}
                             </div>
                           )}
                         </td>
@@ -249,8 +314,13 @@ export function InvoicesView({
                             <button className="ink-act" title="Edit" onClick={() => openEdit(inv)}>
                               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                             </button>
+                            {inv.status !== "draft" && (
+                              <button className="ink-act" title="Payments" onClick={() => openPayments(inv)}>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/><path d="M6 12h.01M18 12h.01"/></svg>
+                              </button>
+                            )}
                             {inv.status !== "paid" && (
-                              <button className="ink-act" title="Mark paid" onClick={() => onMarkPaid(inv.id)}>
+                              <button className="ink-act" title="Mark paid in full" onClick={() => onMarkPaid(inv.id)}>
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="20 6 9 17 4 12"/></svg>
                               </button>
                             )}
@@ -379,6 +449,29 @@ export function InvoicesView({
                 </div>
               </div>
 
+              {form.recurring ? (
+                <label className="ink-check">
+                  <input type="checkbox" checked={form.recur_auto_send !== false}
+                    onChange={(e) => setF("recur_auto_send", e.target.checked)} />
+                  <span>
+                    Email each new copy to the client automatically
+                    <small>
+                      A new invoice with the next number is created {form.recurring === "annually" ? "every year" : "every " + ({ weekly: "week", monthly: "month", quarterly: "3 months" } as Record<string, string>)[form.recurring]} from the issue date,
+                      with the same items and payment terms. Copies start once this invoice has been sent (not while it&apos;s a draft).
+                      Untick to have copies saved as drafts for you to check first.
+                    </small>
+                  </span>
+                </label>
+              ) : null}
+
+              {form.status !== "paid" && (
+                <div className="ink-fg">
+                  <label>Email to client automatically on (optional)</label>
+                  <input type="date" min={todayISO()} value={form.scheduled_send_date ?? ""}
+                    onChange={(e) => setF("scheduled_send_date", e.target.value)} />
+                </div>
+              )}
+
               <div className="ink-fg">
                 <label>Notes / Payment Instructions</label>
                 <textarea value={form.notes ?? ""} onChange={(e) => setF("notes", e.target.value)} placeholder="Bank details, payment methods..." />
@@ -389,6 +482,80 @@ export function InvoicesView({
             <div className="ink-modal-foot">
               <button className="ink-btn ink-btn-ghost" onClick={() => setModalOpen(false)} disabled={busy}>Cancel</button>
               <button className="ink-btn ink-btn-primary" onClick={save} disabled={busy}>{busy ? "Saving..." : "Save Invoice"}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {payInv && (
+        <div className="ink-overlay" onClick={(e) => { if (e.target === e.currentTarget) setPayInvId(null); }}>
+          <div className="ink-modal">
+            <div className="ink-modal-head">
+              <h2>Payments · {payInv.number}</h2>
+              <button className="ink-close" onClick={() => setPayInvId(null)}>×</button>
+            </div>
+            <div className="ink-modal-body">
+              <div className="ink-pay-sum">
+                <div><span>Total</span><strong>{money(payInv.total, currency)}</strong></div>
+                <div><span>Paid</span><strong className="g">{money(payInv.amount_paid, currency)}</strong></div>
+                <div><span>Balance due</span><strong>{money(balanceDue(payInv), currency)}</strong></div>
+              </div>
+
+              {payments.length > 0 ? (
+                <div className="ink-pay-list">
+                  {payments.map((p) => (
+                    <div className="ink-pay-row" key={p.id}>
+                      <div>
+                        <strong className="ink-mono">{money(p.amount, currency)}</strong>
+                        <span>{shortDate(p.paid_on)}{p.method ? " · " + p.method : ""}{p.note ? " · " + p.note : ""}</span>
+                      </div>
+                      <button className="ink-act ink-act-del" title="Remove payment" disabled={payLoading} onClick={() => onDeletePayment(p.id)}>×</button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="ink-pay-empty">{payLoading ? "Loading..." : "No payments recorded yet."}</p>
+              )}
+
+              {balanceDue(payInv) > 0 && (
+                <>
+                  <h4 className="ink-pay-h">Record a payment</h4>
+                  <div className="ink-fgrid">
+                    <div className="ink-fg">
+                      <label>Amount received</label>
+                      <input type="number" step="0.01" min="0" value={payForm.amount}
+                        onChange={(e) => setPayForm({ ...payForm, amount: e.target.value })} />
+                    </div>
+                    <div className="ink-fg">
+                      <label>Date received</label>
+                      <input type="date" value={payForm.paid_on}
+                        onChange={(e) => setPayForm({ ...payForm, paid_on: e.target.value })} />
+                    </div>
+                  </div>
+                  <div className="ink-fgrid">
+                    <div className="ink-fg">
+                      <label>Method</label>
+                      <select value={payForm.method} onChange={(e) => setPayForm({ ...payForm, method: e.target.value })}>
+                        {PAY_METHODS.map((m) => <option key={m} value={m}>{m}</option>)}
+                      </select>
+                    </div>
+                    <div className="ink-fg">
+                      <label>Note (optional)</label>
+                      <input value={payForm.note} placeholder="e.g. deposit, EFT ref 4471"
+                        onChange={(e) => setPayForm({ ...payForm, note: e.target.value })} />
+                    </div>
+                  </div>
+                </>
+              )}
+              {payErr && <p className="ink-err">{payErr}</p>}
+            </div>
+            <div className="ink-modal-foot">
+              <button className="ink-btn ink-btn-ghost" onClick={() => setPayInvId(null)}>Close</button>
+              {balanceDue(payInv) > 0 && (
+                <button className="ink-btn ink-btn-primary" onClick={onRecordPayment} disabled={payLoading}>
+                  {payLoading ? "Saving..." : "Record payment"}
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -471,7 +638,15 @@ export function InvoicesView({
                   {Number(previewInv.discount) > 0 && (
                     <div className="ip-trow"><span>Discount</span><span className="ink-mono">-{money(previewInv.discount, currency)}</span></div>
                   )}
-                  <div className="ip-trow ip-grand"><span>Total Due</span><span className="ink-mono">{money(previewInv.total, currency)}</span></div>
+                  {Number(previewInv.amount_paid) > 0 && previewInv.status !== "paid" ? (
+                    <>
+                      <div className="ip-trow"><span>Total</span><span className="ink-mono">{money(previewInv.total, currency)}</span></div>
+                      <div className="ip-trow"><span>Paid</span><span className="ink-mono">-{money(previewInv.amount_paid, currency)}</span></div>
+                      <div className="ip-trow ip-grand"><span>Balance Due</span><span className="ink-mono">{money(balanceDue(previewInv), currency)}</span></div>
+                    </>
+                  ) : (
+                    <div className="ip-trow ip-grand"><span>Total Due</span><span className="ink-mono">{money(previewInv.total, currency)}</span></div>
+                  )}
                 </div>
 
                 {previewInv.notes && (
@@ -489,7 +664,7 @@ export function InvoicesView({
   );
 }
 
-const css = `
+export const invoiceCss = `
 .ink-topbar { position: sticky; top: 0; z-index: 40; background: rgba(10,10,13,0.85); backdrop-filter: blur(20px); border-bottom: 1px solid var(--border); padding: 0 32px; height: 60px; display: flex; align-items: center; justify-content: space-between; }
 .ink-tb-title { font-size: 18px; font-weight: 700; letter-spacing: -0.3px; }
 .ink-page { padding: 32px; }
@@ -525,6 +700,26 @@ tbody tr:hover td { background: rgba(255,255,255,0.02); }
 .b-unpaid { background: rgba(255,201,64,0.12); color: var(--gold); }
 .b-overdue { background: rgba(255,107,107,0.12); color: var(--electric3); }
 .b-draft { background: rgba(110,110,136,0.2); color: var(--muted2); }
+.b-partial { background: rgba(0,212,255,0.12); color: var(--electric2); }
+.ink-tb-actions { display: flex; align-items: center; gap: 8px; }
+a.ink-btn { text-decoration: none; }
+.ink-due-sub { font-size: 10px; color: var(--electric2); font-weight: 400; margin-top: 3px; }
+.ink-track .s { color: var(--gold); }
+.ink-track .r { color: var(--violet); }
+.ink-check { display: flex; gap: 10px; align-items: flex-start; background: var(--ink3); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; margin: 0 0 16px; font-size: 13px; cursor: pointer; }
+.ink-check input { margin-top: 3px; accent-color: var(--electric); }
+.ink-check small { display: block; color: var(--muted); font-size: 11px; line-height: 1.5; margin-top: 4px; }
+.ink-pay-sum { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 18px; }
+.ink-pay-sum div { background: var(--ink3); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; }
+.ink-pay-sum span { display: block; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+.ink-pay-sum strong { font-family: 'JetBrains Mono', monospace; font-size: 14px; }
+.ink-pay-sum .g { color: var(--electric); }
+.ink-pay-list { border: 1px solid var(--border); border-radius: 10px; margin-bottom: 8px; }
+.ink-pay-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; border-bottom: 1px solid var(--border); }
+.ink-pay-row:last-child { border-bottom: none; }
+.ink-pay-row span { display: block; font-size: 11px; color: var(--muted2); margin-top: 3px; }
+.ink-pay-empty { color: var(--muted); font-size: 13px; margin: 0 0 8px; }
+.ink-pay-h { font-size: 13px; margin: 18px 0 12px; }
 .ink-track { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; font-size: 10px; font-family: 'JetBrains Mono', monospace; color: var(--muted); white-space: nowrap; }
 .ink-track .v { color: var(--electric2); }
 .ink-acts { display: flex; gap: 2px; }
@@ -609,6 +804,11 @@ tbody tr:hover td { background: rgba(255,255,255,0.02); }
 .ink-li-lbl { display: contents; }
 .ink-li-lbl span { display: none; }
 @media (max-width: 640px) {
+  .ink-hide-sm { display: none !important; }
+  .ink-tabbar { max-width: 100%; overflow-x: auto; }
+  .ink-tab { white-space: nowrap; padding: 8px 14px; }
+  .ink-pay-sum { gap: 6px; }
+  .ink-pay-sum div { padding: 10px; }
   .ink-overlay { padding: 8px; align-items: flex-start; }
   .ink-modal { max-height: 96vh; border-radius: 14px; }
   .ink-modal-head, .ink-modal-body { padding: 16px; }

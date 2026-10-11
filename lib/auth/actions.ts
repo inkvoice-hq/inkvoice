@@ -17,7 +17,17 @@ export async function signUp(formData: FormData): Promise<AuthResult> {
 
   const supabase = await createClient();
 
-  const { data, error } = await supabase.auth.signUp({ email, password });
+  const site = (process.env.NEXT_PUBLIC_SITE_URL || "https://zarbill.com").replace(/\/$/, "");
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      // Confirmation link logs them straight in (see app/auth/callback).
+      emailRedirectTo: site + "/auth/callback?next=/app",
+      // Remembered so the workspace gets the right name after confirming.
+      data: { business_name: businessName || "My Business" },
+    },
+  });
   if (error) return { error: error.message };
   if (!data.user) return { error: "Sign up failed. Please try again." };
 

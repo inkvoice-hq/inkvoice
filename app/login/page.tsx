@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
+import { readDraft, draftHasContent } from "@/lib/draft";
 import Link from "next/link";
 import { signUp, logIn } from "@/lib/auth/actions";
 
@@ -9,6 +10,21 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [pendingMsg, setPendingMsg] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const [fromGenerator, setFromGenerator] = useState(false);
+  const [prefill, setPrefill] = useState({ businessName: "", email: "" });
+
+  // Arriving from the free generator (or ?mode=signup): open on sign-up and
+  // pre-fill from the invoice they just made.
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search);
+    if (q.get("mode") === "signup") setMode("signup");
+    const d = readDraft();
+    if (d && draftHasContent(d)) {
+      setFromGenerator(q.get("from") === "generator" || q.get("mode") === "signup");
+      setPrefill({ businessName: d.from?.name || "", email: d.from?.email || "" });
+    }
+    if (q.get("error") === "link") setError("That link has expired. Log in, or sign up again to get a fresh one.");
+  }, []);
 
   function handleSubmit(formData: FormData) {
     setError(null);
@@ -19,7 +35,9 @@ export default function LoginPage() {
       if (result?.error) {
         setError(result.error);
       } else if (mode === "signup") {
-        setPendingMsg("Check your email to confirm your account, then log in.");
+        setPendingMsg(fromGenerator
+          ? "Almost done! Check your email and tap the confirmation link on this device. Your invoice will be waiting."
+          : "Check your email and tap the confirmation link to finish creating your account.");
       }
     });
   }
@@ -32,6 +50,13 @@ export default function LoginPage() {
           <span style={styles.brandName}>Zarbill</span>
         </div>
 
+        {fromGenerator && (
+          <div style={styles.banner}>
+            <strong>Your invoice is saved.</strong>{" "}
+            {(mode === "signup" ? "Create your free account" : "Log in") + " and it'll be waiting in your Invoices, with your client added."}
+          </div>
+        )}
+
         <h1 style={styles.h1}>{mode === "signup" ? "Create your account" : "Welcome back"}</h1>
         <p style={styles.sub}>
           {mode === "signup" ? "Start invoicing in minutes." : "Log in to your workspace."}
@@ -41,12 +66,12 @@ export default function LoginPage() {
           {mode === "signup" && (
             <>
               <label style={styles.label}>BUSINESS NAME</label>
-              <input name="businessName" placeholder="My Studio" style={styles.input} />
+              <input name="businessName" placeholder="My Studio" style={styles.input} defaultValue={prefill.businessName} key={"b" + prefill.businessName} />
             </>
           )}
 
           <label style={styles.label}>EMAIL</label>
-          <input name="email" type="email" required placeholder="you@studio.com" style={styles.input} />
+          <input name="email" type="email" required placeholder="you@studio.com" style={styles.input} defaultValue={prefill.email} key={"e" + prefill.email} />
 
           <label style={styles.label}>PASSWORD</label>
           <input name="password" type="password" required minLength={6} placeholder="********" style={styles.input} />
@@ -108,5 +133,9 @@ const styles: Record<string, React.CSSProperties> = {
   toggle: { color: "#4fffb0", textAlign: "center", cursor: "pointer", fontSize: 13, marginTop: 18 },
   forgot: { display: "block", textAlign: "right", color: "#9898b8", fontSize: 12, marginTop: 8, textDecoration: "none" },
   error: { color: "#ff6b6b", fontSize: 13, marginTop: 14 },
+  banner: {
+    background: "rgba(79,255,176,0.08)", border: "1px solid rgba(79,255,176,0.3)", color: "#d8ffe9",
+    borderRadius: 10, padding: "12px 14px", fontSize: 13, lineHeight: 1.55, marginBottom: 22,
+  },
   ok: { color: "#4fffb0", fontSize: 13, marginTop: 14 },
 };

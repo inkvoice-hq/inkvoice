@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { logOut } from "@/lib/auth/actions";
 import { NavLink } from "@/components/NavLink";
 import Link from "next/link";
+import { DraftImporter } from "@/components/DraftImporter";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const { tenantId, email } = await requireTenant();
@@ -46,6 +47,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             <div className="ink-nav-label">Main</div>
             <NavLink href="/app" exact icon="grid">Dashboard</NavLink>
             <NavLink href="/app/invoices" icon="file">Invoices</NavLink>
+            <NavLink href="/app/quotes" icon="quote">Quotes</NavLink>
             <NavLink href="/app/clients" icon="users">Clients</NavLink>
             <NavLink href="/app/products" icon="cart">Products</NavLink>
           </div>
@@ -76,6 +78,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         </nav>
 
         <div className="ink-main">{children}</div>
+        <DraftImporter />
       </div>
     </>
   );
@@ -157,6 +160,14 @@ a.ink-user-chip { text-decoration: none; min-width: 0; }
 .ink-user-info { flex: 1; min-width: 0; }
 .ink-user-name { font-size: 13px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ink-user-plan { font-size: 10px; color: var(--electric); font-family: 'JetBrains Mono', monospace; }
+.ink-draft-toast {
+  position: fixed; right: 20px; bottom: 20px; z-index: 300; max-width: 460px;
+  display: flex; align-items: center; gap: 14px; padding: 14px 16px; border-radius: 12px;
+  background: #102a1f; border: 1px solid rgba(79,255,176,0.4); color: var(--text); font-size: 13px; line-height: 1.5;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+}
+.ink-draft-toast a { color: var(--electric); font-weight: 700; white-space: nowrap; text-decoration: none; }
+.ink-draft-toast button { background: none; border: none; color: var(--muted2); font-size: 18px; cursor: pointer; }
 .ink-main { margin-left: 260px; flex: 1; min-height: 100vh; display: flex; flex-direction: column; }
 @media (max-width: 900px) {
   .ink-sidebar { width: 68px; }

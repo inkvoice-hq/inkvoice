@@ -87,6 +87,16 @@ export function AccountView({ email, bizName, plan, since }: {
           </div>
 
           <div className="ink-card">
+            <div className="ink-card-head"><span>Your data</span></div>
+            <div className="ink-card-body ac-session">
+              <p className="ink-hint" style={{ margin: 0 }}>
+                Download your clients, invoices, quotes and payments as CSV, or import from another tool.
+              </p>
+              <Link href="/app/import" className="ink-btn ink-btn-ghost">Import &amp; export</Link>
+            </div>
+          </div>
+
+          <div className="ink-card">
             <div className="ink-card-head"><span>Session</span></div>
             <div className="ink-card-body ac-session">
               <p className="ink-hint" style={{ margin: 0 }}>Signed in as {email}</p>
@@ -114,7 +124,7 @@ const css = `
 .ink-btn-primary { background: var(--electric); color: var(--ink); box-shadow: 0 0 20px rgba(79,255,176,0.2); }
 .ink-btn-primary:hover { background: #6fffbe; }
 .ink-btn-primary:disabled { opacity: 0.6; cursor: default; }
-.ink-btn-ghost { background: rgba(255,255,255,0.04); color: var(--text); border: 1px solid var(--border2); }
+.ink-btn-ghost { text-decoration: none; background: rgba(255,255,255,0.04); color: var(--text); border: 1px solid var(--border2); }
 .ink-btn-ghost:hover { background: rgba(255,107,107,0.1); color: var(--electric3); border-color: rgba(255,107,107,0.3); }
 .ink-card { background: var(--ink2); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; }
 .ink-card-head { padding: 18px 24px; border-bottom: 1px solid var(--border); font-size: 14px; font-weight: 600; }

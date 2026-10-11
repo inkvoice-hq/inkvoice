@@ -1,5 +1,6 @@
 "use client";
 
+import { unwrap } from "@/lib/result";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Client, ClientInput } from "@/lib/db/types";
@@ -42,8 +43,8 @@ export function ClientsView({ initialClients }: { initialClients: Client[] }) {
     if (!form.name.trim()) { setErr("Client name is required."); return; }
     setBusy(true); setErr(null);
     try {
-      if (editId) await updateClient(editId, form);
-      else await createClient_(form);
+      if (editId) unwrap(await updateClient(editId, form));
+      else unwrap(await createClient_(form));
       setModalOpen(false);
       router.refresh();
     } catch (e: any) {
@@ -57,7 +58,7 @@ export function ClientsView({ initialClients }: { initialClients: Client[] }) {
     if (!confirm("Delete this client? This cannot be undone.")) return;
     setBusy(true);
     try {
-      await deleteClient(id);
+      unwrap(await deleteClient(id));
       router.refresh();
     } catch (e: any) {
       alert(e?.message || "Delete failed.");
@@ -72,10 +73,14 @@ export function ClientsView({ initialClients }: { initialClients: Client[] }) {
 
       <div className="ink-topbar">
         <div className="ink-tb-title">Clients</div>
+        <div className="ink-tb-actions">
+        <a className="ink-btn ink-btn-ghost ink-btn-sm ink-hide-sm" href="/app/import?type=clients">Import</a>
+        <a className="ink-btn ink-btn-ghost ink-btn-sm ink-hide-sm" href="/app/export/clients">Export CSV</a>
         <button className="ink-btn ink-btn-primary" onClick={openNew}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
           Add Client
         </button>
+        </div>
       </div>
 
       <div className="ink-page">
@@ -85,6 +90,9 @@ export function ClientsView({ initialClients }: { initialClients: Client[] }) {
             <h3>No clients yet</h3>
             <p>Add your first client to start invoicing. Everything saves to your account and syncs across devices.</p>
             <button className="ink-btn ink-btn-primary" onClick={openNew} style={{ marginTop: 18 }}>Add your first client</button>
+            <a href="/app/import?type=clients" style={{ marginTop: 14, fontSize: 13, color: "var(--electric)", textDecoration: "none" }}>
+              Switching from another tool? Import your clients from a CSV
+            </a>
           </div>
         ) : (
           <div className="ink-client-grid">
@@ -201,6 +209,10 @@ const css = `
 .ink-btn-primary:disabled { opacity: 0.6; cursor: default; transform: none; }
 .ink-btn-ghost { background: rgba(255,255,255,0.04); color: var(--text); border: 1px solid var(--border2); }
 .ink-btn-ghost:hover { background: rgba(255,255,255,0.08); }
+.ink-btn-sm { padding: 6px 14px; font-size: 12px; text-decoration: none; }
+a.ink-btn { text-decoration: none; }
+.ink-tb-actions { display: flex; align-items: center; gap: 8px; }
+@media (max-width: 640px) { .ink-hide-sm { display: none !important; } }
 .ink-client-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; }
 .ink-client-card {
   background: var(--ink2); border: 1px solid var(--border); border-radius: 16px; padding: 22px;

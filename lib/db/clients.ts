@@ -1,4 +1,5 @@
 "use server";
+import { attempt, type Result } from "@/lib/result";
 
 import { createClient } from "@/lib/supabase/server";
 import { requireTenant } from "@/lib/db/context";
@@ -30,7 +31,7 @@ export async function getClient(id: string): Promise<Client | null> {
   return (data as Client) ?? null;
 }
 
-export async function createClient_(input: ClientInput): Promise<Client> {
+async function createClient_Impl(input: ClientInput): Promise<Client> {
   await assertCanCreate("clients");
   const { tenantId } = await requireTenant();
   const supabase = await createClient();
@@ -43,7 +44,7 @@ export async function createClient_(input: ClientInput): Promise<Client> {
   return data as Client;
 }
 
-export async function updateClient(id: string, input: Partial<ClientInput>): Promise<Client> {
+async function updateClientImpl(id: string, input: Partial<ClientInput>): Promise<Client> {
   const { tenantId } = await requireTenant();
   const supabase = await createClient();
   const { data, error } = await supabase
@@ -57,7 +58,7 @@ export async function updateClient(id: string, input: Partial<ClientInput>): Pro
   return data as Client;
 }
 
-export async function deleteClient(id: string): Promise<void> {
+async function deleteClientImpl(id: string): Promise<void> {
   const { tenantId } = await requireTenant();
   const supabase = await createClient();
   const { error } = await supabase
@@ -66,4 +67,17 @@ export async function deleteClient(id: string): Promise<void> {
     .eq("tenant_id", tenantId)
     .eq("id", id);
   if (error) throw new Error(error.message);
+}
+
+// ---- Actions called from the browser (errors returned, not thrown) ----
+export async function createClient_(input: ClientInput): Promise<Result<Client>> {
+  return attempt(() => createClient_Impl(input));
+}
+
+export async function updateClient(id: string, input: Partial<ClientInput>): Promise<Result<Client>> {
+  return attempt(() => updateClientImpl(id, input));
+}
+
+export async function deleteClient(id: string): Promise<Result<void>> {
+  return attempt(() => deleteClientImpl(id));
 }
