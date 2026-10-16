@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { money } from "@/lib/format";
 import { unwrap } from "@/lib/result";
 import { draftFollowUp, sendFollowUp, discardFollowUp } from "@/lib/db/followups";
+import { sendInvoiceEmail } from "@/lib/email/invoice";
 import type { NextStep } from "@/lib/insights";
 
 export type FollowUpRow = {
@@ -61,6 +62,20 @@ export function FollowUpsView({ rows, usage }: { rows: FollowUpRow[]; usage: { u
   }
 
   const left = Math.max(0, usage.limit - used);
+  const [sendingId, setSendingId] = useState<string | null>(null);
+
+  // Invoice never emailed from Zarbill: send it right here, no drafting needed.
+  async function sendInvoiceNow(r: FollowUpRow) {
+    if (!confirm("Email invoice " + r.number + " to " + r.client + " now?")) return;
+    setSendingId(r.id);
+    try {
+      const res = await sendInvoiceEmail(r.id);
+      alert(res.message);
+      if (res.ok) router.refresh();
+    } catch (e: any) {
+      alert(e?.message || "Send failed.");
+    } finally { setSendingId(null); }
+  }
 
   return (
     <>
@@ -107,7 +122,11 @@ export function FollowUpsView({ rows, usage }: { rows: FollowUpRow[]; usage: { u
                 </div>
                 <div className="fu-cta">
                   {r.hasEmail
-                    ? <button className="ink-btn ink-btn-primary" onClick={() => start(r)} disabled={!usage.enabled}>Draft with Claude</button>
+                    ? (r.step.title === "Send the invoice"
+                      ? <button className="ink-btn ink-btn-primary" onClick={() => sendInvoiceNow(r)} disabled={sendingId === r.id}>
+                          {sendingId === r.id ? "Sending..." : "Send invoice now"}
+                        </button>
+                      : <button className="ink-btn ink-btn-primary" onClick={() => start(r)} disabled={!usage.enabled}>Draft with Claude</button>)
                     : <a className="fu-link" href="/app/clients">Add client email first</a>}
                 </div>
               </div>
