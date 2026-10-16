@@ -1,7 +1,20 @@
 export const CURRENCY_SYMBOLS: Record<string, string> = {
   USD: "$", EUR: "€", GBP: "£", CAD: "C$", AUD: "A$",
   ZAR: "R", NGN: "₦", KES: "KSh", JPY: "¥", SGD: "S$",
+  NZD: "NZ$", CHF: "CHF ", INR: "₹", AED: "AED ", BWP: "P ", NAD: "N$",
 };
+
+/** The currency an invoice/quote/client uses, falling back to the account's. */
+export function curOf(doc: { currency?: string | null } | null | undefined, fallback: string | null | undefined): string {
+  const c = (doc?.currency || "").toUpperCase();
+  return CURRENCY_SYMBOLS[c] ? c : (fallback && CURRENCY_SYMBOLS[fallback] ? fallback : "USD");
+}
+
+/** Convert an amount in a document's currency to the account currency using its stored rate. */
+export function toHome(amount: number | string | null | undefined, fxRate: number | string | null | undefined): number {
+  const r = Number(fxRate);
+  return round2(Number(amount || 0) * (Number.isFinite(r) && r > 0 ? r : 1));
+}
 
 export function money(amount: number | null | undefined, currency = "USD"): string {
   const n = Number(amount ?? 0);

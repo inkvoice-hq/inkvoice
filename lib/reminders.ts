@@ -20,7 +20,8 @@
 // -----------------------------------------------------------------------------
 import { Resend } from "resend";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { money, fillPaymentLink } from "@/lib/format";
+import { money, fillPaymentLink, curOf } from "@/lib/format";
+import { clientProfiles, profileFor, type ProfileLabel, type InvoiceRow } from "@/lib/insights";
 
 export const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || "https://zarbill.com").replace(/\/$/, "");
 
@@ -83,6 +84,7 @@ type ReminderClient = { id: string; name: string | null; contact: string | null;
 type ReminderInvoice = {
   id: string; tenant_id: string; client_id: string | null; number: string;
   due_date: string | null; total: number; amount_paid: number; status: string; notes: string | null;
+  currency?: string | null; viewed_at?: string | null;
   public_token: string; reminders_sent: number; last_reminder_at: string | null;
   due_soon_sent?: boolean; sent_at?: string | null;
 };
@@ -100,9 +102,14 @@ function greetingName(c: ReminderClient): string {
 export function buildReminderEmail(opts: {
   stage: number;
   inv: ReminderInvoice; tenant: ReminderTenant; client: ReminderClient; overdueDays: number;
+  /** How this client has paid before; tunes the wording. */
+  payer?: ProfileLabel;
 }) {
   const { stage, inv, tenant, client, overdueDays } = opts;
-  const cur = tenant.currency || "ZAR";
+  const payer = opts.payer ?? "new";
+  // Only invoices emailed through Zarbill have a link that can be "opened".
+  const unopened = !!inv.sent_at && !inv.viewed_at;
+  const cur = curOf(inv, tenant.currency);
   const biz = tenant.name || "Your supplier";
   const paidSoFar = Number(inv.amount_paid || 0);
   const balance = Math.max(0, Number(inv.total || 0) - paidSoFar);
@@ -121,12 +128,41 @@ export function buildReminderEmail(opts: {
     body = "Just a heads-up that invoice <strong>" + esc(inv.number) + "</strong> for " + what +
       " is due on <strong>" + esc(due) + "</strong>, in " + esc(days) + ". " +
       "If you've already paid, thank you, and please ignore this email.";
+  } else if (stage === 0 && unopened) {
+    // Never opened: most likely it didn't reach them, so resend kindly.
+    subject = "Did you receive invoice " + inv.number + " from " + biz + "?";
+    heading = "Making sure this reached you";
+    body = "I'm not sure my invoice reached you, so here it is again. Invoice <strong>" + esc(inv.number) +
+      "</strong> for " + what + " was due on <strong>" + esc(due) + "</strong>. " +
+      "If it should go to someone else in your team, just reply and let me know.";
+  } else if (stage === 0 && paidSoFar > 0) {
+    subject = "Remaining balance on invoice " + inv.number;
+    heading = "Thank you for your payment";
+    body = "Thank you for the payment of <strong>" + esc(money(paidSoFar, cur)) + "</strong> towards invoice <strong>" +
+      esc(inv.number) + "</strong>. The remaining <strong>" + esc(amount) + "</strong> was due on <strong>" + esc(due) +
+      "</strong>. Could you let me know when to expect it?";
+  } else if (stage === 0 && payer === "reliable") {
+    subject = "Quick reminder: invoice " + inv.number + " from " + biz;
+    heading = "Just a quick reminder";
+    body = "You're always good with payments, so this one has probably just slipped through the cracks. Invoice <strong>" +
+      esc(inv.number) + "</strong> for " + what + " was due on <strong>" + esc(due) + "</strong>.";
+  } else if (stage === 0 && payer === "slow") {
+    subject = "Invoice " + inv.number + " was due " + due;
+    heading = "Payment reminder";
+    body = "Invoice <strong>" + esc(inv.number) + "</strong> for " + what + " was due on <strong>" + esc(due) +
+      "</strong>. Could you let me know the date payment will be made?";
   } else if (stage === 0) {
     subject = "Friendly reminder: invoice " + inv.number + " from " + biz;
     heading = "Just a friendly reminder";
     body = "This is a quick reminder that invoice <strong>" + esc(inv.number) + "</strong> for " + what +
       " was due on <strong>" + esc(due) + "</strong>. " +
       "If you've already paid, thank you, and please ignore this email.";
+  } else if (stage === 1 && unopened) {
+    subject = "Invoice " + inv.number + " is " + days + " overdue (resent)";
+    heading = "This invoice is now overdue";
+    body = "I haven't been able to confirm that invoice <strong>" + esc(inv.number) + "</strong> reached you, so I'm resending it. " +
+      "It's for " + what + ", was due on <strong>" + esc(due) + "</strong> and is now <strong>" + esc(days) +
+      " overdue</strong>. If there's a better address for invoices, please reply and let me know.";
   } else if (stage === 1) {
     subject = "Invoice " + inv.number + " is " + days + " overdue";
     heading = "This invoice is now overdue";
@@ -207,7 +243,7 @@ export type ReminderResult = {
 };
 
 const INVOICE_COLS =
-  "id, tenant_id, client_id, number, due_date, total, amount_paid, status, notes, public_token, reminders_sent, last_reminder_at, due_soon_sent, sent_at";
+  "id, tenant_id, client_id, number, due_date, total, amount_paid, currency, status, notes, public_token, reminders_sent, last_reminder_at, due_soon_sent, sent_at, viewed_at";
 
 export async function runReminders({ dryRun = false } = {}): Promise<ReminderResult> {
   const result: ReminderResult = { dryRun, checked: 0, sent: [], wouldSend: [], skipped: [], errors: [] };
@@ -254,6 +290,12 @@ export async function runReminders({ dryRun = false } = {}): Promise<ReminderRes
     supabase.from("clients").select("id, name, contact, email").in("id", clientIds),
   ]);
   const tenantMap = new Map((tenants ?? []).map((t: any) => [t.id, t as ReminderTenant]));
+
+  // Payment history of the clients involved, to tune the wording per client.
+  const { data: history } = await supabase.from("invoices")
+    .select("id, number, client_id, status, issue_date, due_date, paid_date, total, amount_paid, currency, fx_rate, recurring, recur_next_date, viewed_at, reminders_sent, sent_at")
+    .eq("status", "paid").in("client_id", clientIds);
+  const profiles = clientProfiles((history ?? []) as InvoiceRow[]);
   const clientMap = new Map((clients ?? []).map((c: any) => [c.id, c as ReminderClient]));
 
   const key = process.env.RESEND_API_KEY;
@@ -313,7 +355,7 @@ export async function runReminders({ dryRun = false } = {}): Promise<ReminderRes
     if (!claimed || claimed.length === 0) continue;
 
     try {
-      await send(tenant, client.email, buildReminderEmail({ stage: stageIdx, inv, tenant, client, overdueDays: overdue }));
+      await send(tenant, client.email, buildReminderEmail({ stage: stageIdx, inv, tenant, client, overdueDays: overdue, payer: profileFor(profiles, inv.client_id).label }));
       result.sent.push({ invoice: inv.number, to: client.email, stage: stageIdx + 1 });
     } catch (e: any) {
       await supabase.from("invoices")

@@ -39,6 +39,7 @@ export interface Client {
   tax_id: string | null;
   industry: string | null;
   notes: string | null;
+  currency: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -78,6 +79,8 @@ export interface Invoice {
   items: InvoiceItem[];
   subtotal: number;
   total: number;
+  currency: string | null;
+  fx_rate: number | null;
   public_token: string;
   viewed_at: string | null;
   reminders_sent: number;
@@ -102,6 +105,8 @@ export interface Payment {
   paid_on: string;
   method: string | null;
   note: string | null;
+  home_amount: number | null;
+  fee: number;
   created_at: string;
 }
 
@@ -122,6 +127,7 @@ export interface Quote {
   items: InvoiceItem[];
   subtotal: number;
   total: number;
+  currency: string | null;
   public_token: string;
   sent_at: string | null;
   viewed_at: string | null;
@@ -134,6 +140,7 @@ export interface Quote {
 
 export interface QuoteFormInput {
   client_id: string | null;
+  currency?: string | null;
   number: string;
   issue_date: string | null;
   valid_until: string | null;
@@ -150,6 +157,22 @@ export interface PaymentInput {
   paid_on: string;
   method: string | null;
   note: string | null;
+  /** What landed in the bank, in the account currency (after fees). */
+  home_amount?: number | null;
+  /** Fees deducted, in the account currency. */
+  fee?: number | null;
+}
+
+export interface AiDraft {
+  id: string;
+  tenant_id: string;
+  invoice_id: string;
+  tone: string | null;
+  subject: string;
+  body: string;
+  status: "draft" | "sent" | "discarded";
+  created_at: string;
+  sent_at: string | null;
 }
 
 export interface Subscription {
@@ -172,6 +195,7 @@ export type ProductInput = Omit<Product, "id" | "tenant_id" | "created_at">;
 
 export interface InvoiceFormInput {
   client_id: string | null;
+  currency?: string | null;
   number: string;
   issue_date: string | null;
   due_date: string | null;

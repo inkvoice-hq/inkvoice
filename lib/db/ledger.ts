@@ -45,15 +45,17 @@ export async function payRemainingBalance(
   supabase: SupabaseClient, tenantId: string, invoiceId: string, paidOn?: string | null, method = "Marked paid"
 ): Promise<void> {
   const [{ data: inv }, { data: pays }] = await Promise.all([
-    supabase.from("invoices").select("total").eq("tenant_id", tenantId).eq("id", invoiceId).maybeSingle(),
+    supabase.from("invoices").select("total, fx_rate").eq("tenant_id", tenantId).eq("id", invoiceId).maybeSingle(),
     supabase.from("payments").select("amount").eq("tenant_id", tenantId).eq("invoice_id", invoiceId),
   ]);
   if (!inv) return;
+  const rate = Number(inv.fx_rate) > 0 ? Number(inv.fx_rate) : 1;
   const paid = (pays ?? []).reduce((s, p: any) => s + Number(p.amount || 0), 0);
   const remaining = round2(Number(inv.total || 0) - paid);
   if (remaining > 0) {
     const { error } = await supabase.from("payments").insert({
       tenant_id: tenantId, invoice_id: invoiceId, amount: remaining,
+      home_amount: round2(remaining * rate), fee: 0,
       paid_on: paidOn || new Date().toISOString().slice(0, 10), method, note: null,
     });
     if (error) throw new Error(error.message);

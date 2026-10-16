@@ -7,7 +7,7 @@
 // -----------------------------------------------------------------------------
 import { Resend } from "resend";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { money, balanceDue, fillPaymentLink } from "@/lib/format";
+import { money, balanceDue, fillPaymentLink, curOf } from "@/lib/format";
 import { invoiceUrl, niceDate, esc, SITE_URL } from "@/lib/reminders";
 
 export type SendResult = { ok: boolean; message: string };
@@ -49,7 +49,7 @@ export async function deliverInvoiceEmail(
   const key = process.env.RESEND_API_KEY;
   if (!key) return { ok: false, message: "Email sending is not configured yet." };
 
-  const cur = tenant?.currency ?? "ZAR";
+  const cur = curOf(inv, tenant?.currency);
   const biz = tenant?.name || "Your Business";
   const paid = Number(inv.amount_paid || 0);
   const balance = balanceDue(inv);

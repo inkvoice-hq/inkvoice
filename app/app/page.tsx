@@ -4,7 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 import { listClients } from "@/lib/db/clients";
 import { listInvoices } from "@/lib/db/invoices";
 import { listProducts } from "@/lib/db/products";
-import { money, displayStatus, balanceDue } from "@/lib/format";
+import { money, displayStatus, balanceDue, curOf, toHome, todayISO } from "@/lib/format";
+import { clientProfiles, profileFor, nextStep, forecast, type InvoiceRow } from "@/lib/insights";
 
 export default async function DashboardPage() {
   const { email, tenantId } = await requireTenant();
@@ -17,14 +18,28 @@ export default async function DashboardPage() {
     .from("tenants").select("currency").eq("id", tenantId).maybeSingle();
   const currency = tenant?.currency ?? "ZAR";
 
-  const outstanding = invoices
-    .filter((i) => i.status !== "paid" && i.status !== "draft")
-    .reduce((s, i) => s + balanceDue(i), 0);
+  // Everything is shown in the account currency. Foreign invoices are
+  // converted at the rate stored when they were created.
+  const open = invoices.filter((i) => i.status !== "paid" && i.status !== "draft");
+  const outstanding = open.reduce((s, i) => s + toHome(balanceDue(i), i.fx_rate), 0);
+  const foreignOpen = new Map<string, number>();
+  for (const i of open) {
+    const c = curOf(i, currency);
+    if (c !== currency) foreignOpen.set(c, (foreignOpen.get(c) || 0) + balanceDue(i));
+  }
   const overdue = invoices.filter(
     (i) => displayStatus(i.status, i.due_date) === "overdue"
   ).length;
-  // Every payment received, including part-payments on unpaid invoices.
-  const paidTotal = invoices.reduce((s, i) => s + Number(i.amount_paid || 0), 0);
+
+  // Money actually received (what landed in the bank, in the account currency).
+  const { data: pays } = await supabase.from("payments").select("home_amount, amount").eq("tenant_id", tenantId);
+  const paidTotal = (pays ?? []).reduce((s, p: any) => s + Number(p.home_amount ?? p.amount ?? 0), 0);
+
+  const rows = invoices as unknown as InvoiceRow[];
+  const today = todayISO();
+  const profiles = clientProfiles(rows);
+  const needFollowUp = open.filter((i) => nextStep(i as unknown as InvoiceRow, profileFor(profiles, i.client_id), today).priority >= 60).length;
+  const next30 = forecast(rows, currency, today).buckets[0].amount;
 
   return (
     <>
@@ -44,11 +59,16 @@ export default async function DashboardPage() {
             <div style={statLabel}>OUTSTANDING</div>
             <div style={{ ...statVal, color: "#4fffb0" }}>{money(outstanding, currency)}</div>
             <div style={statSub}>{overdue > 0 ? `${overdue} overdue` : "Nothing overdue"}</div>
+            {foreignOpen.size > 0 && (
+              <div style={{ fontSize: 11, color: "#6e6e88", marginTop: 6 }}>
+                Includes {Array.from(foreignOpen.entries()).map(([c, v]) => money(v, c)).join(" + ")}, converted at invoice-date rates
+              </div>
+            )}
           </div>
           <div style={statCard}>
             <div style={statLabel}>PAID TO DATE</div>
             <div style={statVal}>{money(paidTotal, currency)}</div>
-            <div style={statSub}>All time</div>
+            <div style={statSub}>All time, after fees</div>
           </div>
         </div>
 
@@ -72,6 +92,23 @@ export default async function DashboardPage() {
               <div style={statLabel}>SERVICES</div>
               <div style={statVal}>{products.length}</div>
               <div style={statSub}>Manage services →</div>
+            </div>
+          </Link>
+        </div>
+
+        <div style={{ ...statRow, marginTop: 14 }}>
+          <Link href="/app/follow-ups" style={linkReset}>
+            <div style={{ ...statCard, ...(needFollowUp > 0 ? { border: "1px solid rgba(255,201,64,0.3)" } : {}) }}>
+              <div style={statLabel}>NEEDS A FOLLOW-UP</div>
+              <div style={statVal}>{needFollowUp}</div>
+              <div style={statSub}>{needFollowUp > 0 ? "See who to chase →" : "All under control →"}</div>
+            </div>
+          </Link>
+          <Link href="/app/insights" style={linkReset}>
+            <div style={statCard}>
+              <div style={statLabel}>EXPECTED NEXT 30 DAYS</div>
+              <div style={statVal}>{money(next30, currency)}</div>
+              <div style={statSub}>Cash forecast →</div>
             </div>
           </Link>
         </div>

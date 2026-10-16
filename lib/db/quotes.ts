@@ -9,7 +9,7 @@ import { attempt, unwrap, type Result } from "@/lib/result";
 import { createClient } from "@/lib/supabase/server";
 import { requireTenant } from "@/lib/db/context";
 import { computeTotals } from "@/lib/totals";
-import { round2, todayISO, addDaysISO } from "@/lib/format";
+import { round2, todayISO, addDaysISO, CURRENCY_SYMBOLS } from "@/lib/format";
 import { createInvoice_, nextInvoiceNumber } from "@/lib/db/invoices";
 import type { Quote, QuoteFormInput, QuoteStatus } from "@/lib/db/types";
 
@@ -32,6 +32,19 @@ export async function nextQuoteNumber(): Promise<string> {
   return `QUO-${data?.next_quote_number ?? 1001}`;
 }
 
+async function quoteCurrency(
+  supabase: Awaited<ReturnType<typeof createClient>>, tenantId: string, input: QuoteFormInput
+): Promise<string> {
+  const wanted = String(input.currency || "").toUpperCase();
+  if (CURRENCY_SYMBOLS[wanted]) return wanted;
+  if (input.client_id) {
+    const { data: c } = await supabase.from("clients").select("currency").eq("tenant_id", tenantId).eq("id", input.client_id).maybeSingle();
+    if (c?.currency && CURRENCY_SYMBOLS[c.currency]) return c.currency;
+  }
+  const { data: t } = await supabase.from("tenants").select("currency").eq("id", tenantId).maybeSingle();
+  return t?.currency || "USD";
+}
+
 function row(input: QuoteFormInput) {
   const { items, subtotal, total } = computeTotals(input.items, input.tax_rate, input.discount);
   return {
@@ -51,7 +64,7 @@ async function createQuoteImpl(input: QuoteFormInput): Promise<Quote> {
   const { tenantId } = await requireTenant();
   const supabase = await createClient();
   const { data, error } = await supabase
-    .from("quotes").insert({ ...row(input), tenant_id: tenantId, status: "draft" })
+    .from("quotes").insert({ ...row(input), currency: await quoteCurrency(supabase, tenantId, input), tenant_id: tenantId, status: "draft" })
     .select("*").single();
   if (error) {
     if (error.code === "23505") throw new Error(`Quote number "${input.number}" already exists.`);
@@ -77,7 +90,7 @@ async function updateQuoteImpl(id: string, input: QuoteFormInput): Promise<Quote
   if (before.status === "converted") throw new Error("This quote is already an invoice. Edit the invoice instead.");
 
   const { data, error } = await supabase
-    .from("quotes").update(row(input))
+    .from("quotes").update({ ...row(input), currency: await quoteCurrency(supabase, tenantId, input) })
     .eq("tenant_id", tenantId).eq("id", id).select("*").single();
   if (error) {
     if (error.code === "23505") throw new Error(`Quote number "${input.number}" already exists.`);
@@ -123,6 +136,7 @@ async function convertQuoteToInvoiceImpl(id: string): Promise<{ invoiceId: strin
 
   const inv = unwrap(await createInvoice_({
     client_id: q.client_id,
+    currency: q.currency,
     number: await nextInvoiceNumber(),
     issue_date: issue,
     due_date: addDaysISO(t?.payment_terms ?? 30, issue),

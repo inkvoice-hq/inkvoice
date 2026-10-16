@@ -5,15 +5,16 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Client, ClientInput } from "@/lib/db/types";
 import { createClient_, updateClient, deleteClient } from "@/lib/db/clients";
+import { CURRENCY_SYMBOLS } from "@/lib/format";
 
 const AVA_COLORS = ["#4fffb0", "#00d4ff", "#b87dff", "#ffc940", "#ff6b6b", "#5ce0ff"];
 
 const EMPTY: ClientInput = {
   name: "", contact: "", email: "", phone: "", address: "",
-  website: "", tax_id: "", industry: "", notes: "",
+  website: "", tax_id: "", industry: "", notes: "", currency: "",
 };
 
-export function ClientsView({ initialClients }: { initialClients: Client[] }) {
+export function ClientsView({ initialClients, homeCurrency = "ZAR" }: { initialClients: Client[]; homeCurrency?: string }) {
   const router = useRouter();
   const clients = initialClients;
   const [modalOpen, setModalOpen] = useState(false);
@@ -30,7 +31,7 @@ export function ClientsView({ initialClients }: { initialClients: Client[] }) {
     setForm({
       name: c.name, contact: c.contact ?? "", email: c.email ?? "",
       phone: c.phone ?? "", address: c.address ?? "", website: c.website ?? "",
-      tax_id: c.tax_id ?? "", industry: c.industry ?? "", notes: c.notes ?? "",
+      tax_id: c.tax_id ?? "", industry: c.industry ?? "", notes: c.notes ?? "", currency: c.currency ?? "",
     });
     setErr(null); setModalOpen(true);
   }
@@ -108,6 +109,7 @@ export function ClientsView({ initialClients }: { initialClients: Client[] }) {
                   </div>
                 </div>
                 <div className="ink-cc-meta">
+                  {c.currency && c.currency !== homeCurrency && <span className="ink-chip">Bills in {c.currency}</span>}
                   {c.industry && <span className="ink-chip">{c.industry}</span>}
                   {c.contact && <span className="ink-cc-contact">{c.contact}</span>}
                 </div>
@@ -144,6 +146,15 @@ export function ClientsView({ initialClients }: { initialClients: Client[] }) {
               <div className="ink-fgrid">
                 <Field label="Website" value={form.website ?? ""} onChange={(v) => set("website", v)} placeholder="acme.com" />
                 <Field label="Tax / VAT Number" value={form.tax_id ?? ""} onChange={(v) => set("tax_id", v)} placeholder="Optional" />
+              </div>
+              <div className="ink-fg">
+                <label>Billing currency</label>
+                <select value={form.currency ?? ""} onChange={(e) => set("currency", e.target.value)}>
+                  <option value="">{homeCurrency} — your account currency</option>
+                  {Object.keys(CURRENCY_SYMBOLS).filter((c) => c !== homeCurrency).map((c) => (
+                    <option key={c} value={c}>{c} ({CURRENCY_SYMBOLS[c].trim()})</option>
+                  ))}
+                </select>
               </div>
               <div className="ink-fg">
                 <label>Industry</label>

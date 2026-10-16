@@ -5,6 +5,14 @@ import { createClient } from "@/lib/supabase/server";
 import { requireTenant } from "@/lib/db/context";
 import { assertCanCreate } from "@/lib/db/guard";
 import type { Client, ClientInput } from "@/lib/db/types";
+import { CURRENCY_SYMBOLS } from "@/lib/format";
+
+/** Blank or unknown currency means "use the account currency". */
+function cleanCurrency<T extends Partial<ClientInput>>(input: T): T {
+  if (!("currency" in input)) return input;
+  const c = String(input.currency || "").toUpperCase();
+  return { ...input, currency: CURRENCY_SYMBOLS[c] ? c : null };
+}
 
 export async function listClients(): Promise<Client[]> {
   const { tenantId } = await requireTenant();
@@ -37,7 +45,7 @@ async function createClient_Impl(input: ClientInput): Promise<Client> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("clients")
-    .insert({ ...input, tenant_id: tenantId })
+    .insert({ ...cleanCurrency(input), tenant_id: tenantId })
     .select("*")
     .single();
   if (error) throw new Error(error.message);
@@ -49,7 +57,7 @@ async function updateClientImpl(id: string, input: Partial<ClientInput>): Promis
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("clients")
-    .update(input)
+    .update(cleanCurrency(input))
     .eq("tenant_id", tenantId)
     .eq("id", id)
     .select("*")

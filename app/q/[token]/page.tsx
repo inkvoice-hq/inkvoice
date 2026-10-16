@@ -7,7 +7,7 @@ import { cache } from "react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { money, round2, todayISO } from "@/lib/format";
+import { money, round2, todayISO, curOf } from "@/lib/format";
 import { niceDate } from "@/lib/reminders";
 import { viewerIsOwner } from "@/lib/public-quote";
 import { hostedCss as css } from "@/lib/hosted-css";
@@ -54,7 +54,7 @@ export default async function HostedQuotePage({ params }: { params: Promise<{ to
   if (!d) notFound();
   const { q, tenant, client, owner } = d;
 
-  const cur = tenant?.currency || "ZAR";
+  const cur = curOf(q, tenant?.currency);
   const biz = tenant?.name || "Your supplier";
   const items: any[] = Array.isArray(q.items) ? q.items : [];
   const taxAmt = round2(Number(q.subtotal) * Number(q.tax_rate || 0) / 100);

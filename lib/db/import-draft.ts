@@ -69,6 +69,7 @@ export async function importGeneratorDraft(raw: unknown): Promise<{
   const issue = date(d.issued) ?? todayISO();
   const input = {
     client_id: clientId,
+    currency: CURRENCY_SYMBOLS[str(d.cur)] ? str(d.cur) : null,
     number: str(d.num, 40) || (await nextInvoiceNumber()),
     issue_date: issue,
     due_date: date(d.due) ?? addDaysISO(30, issue),

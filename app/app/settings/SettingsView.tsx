@@ -170,10 +170,14 @@ export function SettingsView({ tenant }: { tenant: Tenant }) {
               <>
                 <div className="ink-card-head"><span>Invoice Defaults</span></div>
                 <div className="ink-card-body">
-                  <p className="ink-hint">Applied automatically to every new invoice you create.</p>
+                  <p className="ink-hint">
+                    Applied automatically to every new invoice you create. Your home currency is the one you&apos;re
+                    paid out in: dashboards and reports use it, and it&apos;s the default for clients. Bill a client in
+                    another currency by setting it on the client (or on a single invoice).
+                  </p>
                   <div className="ink-fgrid">
                     <div className="ink-fg">
-                      <label>Currency</label>
+                      <label>Home currency</label>
                       <select value={f.currency} onChange={(e) => set("currency", e.target.value)}>
                         {Object.keys(CURRENCY_SYMBOLS).map((c) => (
                           <option key={c} value={c}>{c} ({CURRENCY_SYMBOLS[c]})</option>
@@ -203,12 +207,13 @@ export function SettingsView({ tenant }: { tenant: Tenant }) {
                   <F label="Invoice Footer Message" v={f.footer_message ?? ""} on={(v) => set("footer_message", v)}
                     ph="Thank you for your business!" />
                   <F label="Online payment link (optional)" v={f.payment_link ?? ""} on={(v) => set("payment_link", v)}
-                    ph="https://paypal.me/yourname/{amount}" />
+                    ph="https://paypal.me/yourname/{amount}{currency}" />
                   <p className="ink-hint" style={{ marginTop: -8 }}>
                     Paste a link from PayPal, Yoco, SnapScan, a Paystack payment page, Stripe or any service you
                     already use. A <strong>Pay now</strong> button then appears on every invoice, email and reminder.
-                    Optional: put <code>{"{amount}"}</code> or <code>{"{invoice}"}</code> in the link and Zarbill fills
-                    in the balance due or invoice number (handy for PayPal.me links). When a client pays, record it
+                    Optional: put <code>{"{amount}"}</code>, <code>{"{currency}"}</code> or <code>{"{invoice}"}</code> in the link and
+                    Zarbill fills in the balance due, the invoice&apos;s currency or its number. For PayPal.me use
+                    <code>{"/{amount}{currency}"}</code> so clients abroad pay in their own currency. When a client pays, record it
                     with the <strong>Payments</strong> button on the invoice.
                   </p>
                 </div>

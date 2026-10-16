@@ -16,6 +16,13 @@ export const PLAN_PRICING = {
   business: { ZAR: 69900, USD: 4900 },
 } as const;
 
+/** Claude-drafted follow-up emails per calendar month. */
+export const AI_DRAFTS_PER_MONTH: Record<PlanId, number> = { free: 5, pro: 200, business: 500 };
+
+export function aiDraftLimit(plan: string | null | undefined): number {
+  return AI_DRAFTS_PER_MONTH[(plan as PlanId) ?? "free"] ?? AI_DRAFTS_PER_MONTH.free;
+}
+
 export function planLimits(plan: string | null | undefined): PlanLimits {
   return PLAN_LIMITS[(plan as PlanId) ?? "free"] ?? PLAN_LIMITS.free;
 }

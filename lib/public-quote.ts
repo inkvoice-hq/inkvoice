@@ -3,7 +3,7 @@
 import { Resend } from "resend";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
-import { money } from "@/lib/format";
+import { money, curOf } from "@/lib/format";
 import { esc, SITE_URL } from "@/lib/reminders";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -59,7 +59,7 @@ export async function respondToQuote(
     const key = process.env.RESEND_API_KEY;
     if (key && tenant?.email) {
       const who = (name || "").trim().slice(0, 80) || client?.name || "Your client";
-      const amt = money(q.total, tenant.currency || "ZAR");
+      const amt = money(q.total, curOf(q, tenant.currency));
       const accepted = answer === "accept";
       await new Resend(key).emails.send({
         from: "Zarbill <" + (process.env.INVOICE_FROM_EMAIL || "invoices@zarbill.com") + ">",

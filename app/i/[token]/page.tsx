@@ -9,7 +9,7 @@ import { cache } from "react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { money, round2, displayStatus, balanceDue, fillPaymentLink } from "@/lib/format";
+import { money, round2, displayStatus, balanceDue, fillPaymentLink, curOf } from "@/lib/format";
 import { niceDate, daysOverdue } from "@/lib/reminders";
 import { InvoiceActions } from "./InvoiceActions";
 import { hostedCss as css } from "@/lib/hosted-css";
@@ -57,7 +57,7 @@ export default async function HostedInvoicePage(
   if (!d) notFound();
   const { inv, tenant, client } = d;
 
-  const cur = tenant?.currency || "ZAR";
+  const cur = curOf(inv, tenant?.currency);
   const biz = tenant?.name || "Your supplier";
   const st = displayStatus(inv.status, inv.due_date, inv.amount_paid);
   const paidSoFar = Number(inv.amount_paid || 0);

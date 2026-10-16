@@ -4,7 +4,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { requireTenant } from "@/lib/db/context";
 import { toCSV } from "@/lib/csv";
-import { displayStatus, balanceDue } from "@/lib/format";
+import { displayStatus, balanceDue, curOf } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 
@@ -48,7 +48,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ kind: s
        "Tax Rate %", "Discount", "Total", "Amount Paid", "Balance Due", "Paid Date", "Description", "Line Items", "Notes", "Recurring"],
       (data ?? []).map((i: any) => {
         const c = byId.get(i.client_id);
-        return [i.number, c?.name, c?.email, i.issue_date, i.due_date, displayStatus(i.status, i.due_date, i.amount_paid), cur,
+        return [i.number, c?.name, c?.email, i.issue_date, i.due_date, displayStatus(i.status, i.due_date, i.amount_paid), curOf(i, cur),
           Number(i.subtotal).toFixed(2), Number(i.tax_rate), Number(i.discount).toFixed(2), Number(i.total).toFixed(2),
           Number(i.amount_paid || 0).toFixed(2), balanceDue(i).toFixed(2), i.paid_date, i.description, lines(i.items), i.notes, i.recurring];
       }),
@@ -59,7 +59,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ kind: s
     const { data } = await supabase.from("quotes").select("*").eq("tenant_id", tenantId).order("issue_date", { ascending: true });
     return file(`zarbill-quotes-${stamp}.csv`, toCSV(
       ["Quote Number", "Client", "Date", "Valid Until", "Status", "Currency", "Subtotal", "Tax Rate %", "Discount", "Total", "Description", "Line Items"],
-      (data ?? []).map((q: any) => [q.number, byId.get(q.client_id)?.name, q.issue_date, q.valid_until, q.status, cur,
+      (data ?? []).map((q: any) => [q.number, byId.get(q.client_id)?.name, q.issue_date, q.valid_until, q.status, curOf(q, cur),
         Number(q.subtotal).toFixed(2), Number(q.tax_rate), Number(q.discount).toFixed(2), Number(q.total).toFixed(2), q.description, lines(q.items)]),
     ));
   }
@@ -67,14 +67,15 @@ export async function GET(_req: Request, { params }: { params: Promise<{ kind: s
   if (kind === "payments") {
     const [{ data: pays }, { data: invs }] = await Promise.all([
       supabase.from("payments").select("*").eq("tenant_id", tenantId).order("paid_on", { ascending: true }),
-      supabase.from("invoices").select("id, number, client_id").eq("tenant_id", tenantId),
+      supabase.from("invoices").select("id, number, client_id, currency").eq("tenant_id", tenantId),
     ]);
     const invById = new Map((invs ?? []).map((i: any) => [i.id, i]));
     return file(`zarbill-payments-${stamp}.csv`, toCSV(
-      ["Date", "Invoice Number", "Client", "Amount", "Currency", "Method", "Note"],
+      ["Date", "Invoice Number", "Client", "Amount", "Currency", `Received (${cur})`, `Fees (${cur})`, "Method", "Note"],
       (pays ?? []).map((p: any) => {
         const inv = invById.get(p.invoice_id);
-        return [p.paid_on, inv?.number, byId.get(inv?.client_id)?.name, Number(p.amount).toFixed(2), cur, p.method, p.note];
+        return [p.paid_on, inv?.number, byId.get(inv?.client_id)?.name, Number(p.amount).toFixed(2), curOf(inv, cur),
+          p.home_amount == null ? "" : Number(p.home_amount).toFixed(2), Number(p.fee || 0).toFixed(2), p.method, p.note];
       }),
     ));
   }

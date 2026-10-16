@@ -16,6 +16,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { deliverInvoiceEmail } from "@/lib/email/invoice-core";
 import { addInterval, daysBetween, addDaysISO } from "@/lib/format";
 import { atLimit } from "@/lib/plans";
+import { fxRate } from "@/lib/fx";
 
 type Log = { invoice: string; detail: string };
 export type JobResult = { dryRun: boolean; done: Log[]; wouldDo: Log[]; skipped: Log[]; errors: Log[] };
@@ -103,7 +104,7 @@ export async function runRecurring({ dryRun = false } = {}): Promise<JobResult> 
     const anchor = (t.issue_date || issue) as string;
     const following = nextAfter(anchor, t.recurring, today > issue ? today : issue);
 
-    const { data: tenant } = await admin.from("tenants").select("plan, payment_terms").eq("id", t.tenant_id).maybeSingle();
+    const { data: tenant } = await admin.from("tenants").select("plan, payment_terms, currency").eq("id", t.tenant_id).maybeSingle();
     const { count } = await admin.from("invoices").select("id", { count: "exact", head: true }).eq("tenant_id", t.tenant_id);
     if (atLimit(tenant?.plan, "invoices", count ?? 0)) {
       r.skipped.push({ invoice: t.number, detail: "free plan invoice limit reached" });
@@ -124,6 +125,9 @@ export async function runRecurring({ dryRun = false } = {}): Promise<JobResult> 
     try {
       const termDays = t.issue_date && t.due_date ? Math.max(0, daysBetween(t.issue_date, t.due_date)) : (tenant?.payment_terms ?? 30);
       const number = await claimInvoiceNumber(admin, t.tenant_id);
+      const home = tenant?.currency || t.currency || "USD";
+      const currency = t.currency || home;
+      const fx_rate = currency === home ? 1 : ((await fxRate(currency, home)) ?? t.fx_rate ?? null);
       const { data: copy, error: insErr } = await admin.from("invoices").insert({
         tenant_id: t.tenant_id,
         client_id: t.client_id,
@@ -138,6 +142,8 @@ export async function runRecurring({ dryRun = false } = {}): Promise<JobResult> 
         items: t.items,
         subtotal: t.subtotal,
         total: t.total,
+        currency,
+        fx_rate,
         recurring: null,
         recur_parent_id: t.id,
       }).select("id, number").single();

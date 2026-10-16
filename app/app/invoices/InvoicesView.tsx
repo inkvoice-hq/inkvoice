@@ -8,7 +8,7 @@ import type { Invoice, InvoiceItem, Client, Product, InvoiceFormInput, Payment }
 import { listPayments, recordPayment, deletePayment } from "@/lib/db/payments";
 import { createInvoice_, updateInvoice, deleteInvoice, markInvoicePaid } from "@/lib/db/invoices";
 import { sendInvoiceEmail } from "@/lib/email/invoice";
-import { money, round2, todayISO, addDaysISO, displayStatus, balanceDue } from "@/lib/format";
+import { money, round2, todayISO, addDaysISO, displayStatus, balanceDue, curOf, CURRENCY_SYMBOLS } from "@/lib/format";
 
 type TenantLite = {
   name: string | null; logo_url: string | null; email: string | null; address: string | null; phone: string | null;
@@ -45,13 +45,13 @@ export function InvoicesView({
   suggestedNumber: string; tenant: TenantLite;
 }) {
   const router = useRouter();
-  const currency = tenant?.currency ?? "USD";
+  const homeCur = tenant?.currency ?? "USD";
   const invoices = initialInvoices;
   const [tab, setTab] = useState<Tab>("all");
   const [payInvId, setPayInvId] = useState<string | null>(null);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [payLoading, setPayLoading] = useState(false);
-  const [payForm, setPayForm] = useState({ amount: "", paid_on: todayISO(), method: PAY_METHODS[0], note: "" });
+  const [payForm, setPayForm] = useState({ amount: "", paid_on: todayISO(), method: PAY_METHODS[0], note: "", home_amount: "", fee: "" });
   const [payErr, setPayErr] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [previewId, setPreviewId] = useState<string | null>(null);
@@ -85,7 +85,7 @@ export function InvoicesView({
   function openEdit(inv: Invoice) {
     setEditId(inv.id);
     setForm({
-      client_id: inv.client_id, number: inv.number,
+      client_id: inv.client_id, currency: inv.currency || homeCur, number: inv.number,
       issue_date: inv.issue_date, due_date: inv.due_date, paid_date: inv.paid_date,
       description: inv.description ?? "", status: inv.status,
       tax_rate: Number(inv.tax_rate) || 0, discount: Number(inv.discount) || 0,
@@ -177,7 +177,7 @@ export function InvoicesView({
 
   async function openPayments(inv: Invoice) {
     setPayInvId(inv.id); setPayErr(null); setPayLoading(true); setPayments([]);
-    setPayForm({ amount: balanceDue(inv).toFixed(2), paid_on: todayISO(), method: PAY_METHODS[0], note: "" });
+    setPayForm({ amount: balanceDue(inv).toFixed(2), paid_on: todayISO(), method: PAY_METHODS[0], note: "", home_amount: "", fee: "" });
     try { setPayments(await listPayments(inv.id)); }
     catch (e: any) { setPayErr(e?.message || "Could not load payments."); }
     finally { setPayLoading(false); }
@@ -190,9 +190,11 @@ export function InvoicesView({
       unwrap(await recordPayment({
         invoice_id: payInvId, amount: parseFloat(payForm.amount) || 0,
         paid_on: payForm.paid_on, method: payForm.method, note: payForm.note,
+        home_amount: payForm.home_amount === "" ? null : parseFloat(payForm.home_amount),
+        fee: payForm.fee === "" ? 0 : parseFloat(payForm.fee),
       }));
       setPayments(await listPayments(payInvId));
-      setPayForm((f) => ({ ...f, amount: "", note: "" }));
+      setPayForm((f) => ({ ...f, amount: "", note: "", home_amount: "", fee: "" }));
       router.refresh();
     } catch (e: any) {
       setPayErr(e?.message || "Could not record payment.");
@@ -228,6 +230,20 @@ export function InvoicesView({
 
   const previewInv = previewId ? invoices.find((i) => i.id === previewId) ?? null : null;
   const payInv = payInvId ? invoices.find((i) => i.id === payInvId) ?? null : null;
+  const formCur = curOf(form, homeCur);
+  const payCur = curOf(payInv, homeCur);
+  const prevCur = curOf(previewInv, homeCur);
+  const payForeign = !!payInv && payCur !== homeCur;
+  const editingHasPayments = !!editId && Number(invoices.find((i) => i.id === editId)?.amount_paid || 0) > 0;
+
+  function pickClient(id: string | null) {
+    const c = clients.find((x) => x.id === id);
+    setForm((f) => ({
+      ...f, client_id: id,
+      // Follow the client's billing currency unless payments already exist.
+      currency: editingHasPayments ? f.currency : (c?.currency || homeCur),
+    }));
+  }
 
   return (
     <>
@@ -282,8 +298,8 @@ export function InvoicesView({
                         <td>{clientName(inv.client_id)}</td>
                         <td className="ink-muted ink-trunc">{inv.description || "—"}</td>
                         <td className="ink-mono ink-bold">
-                          {money(inv.total, currency)}
-                          {st !== "paid" && Number(inv.amount_paid) > 0 && <div className="ink-due-sub">{money(bal, currency)} due</div>}
+                          {money(inv.total, curOf(inv, homeCur))}
+                          {st !== "paid" && Number(inv.amount_paid) > 0 && <div className="ink-due-sub">{money(bal, curOf(inv, homeCur))} due</div>}
                         </td>
                         <td className="ink-muted ink-mono ink-sm">{inv.issue_date || "—"}</td>
                         <td className="ink-muted ink-mono ink-sm">{inv.due_date || "—"}</td>
@@ -347,12 +363,19 @@ export function InvoicesView({
               <button className="ink-close" onClick={() => setModalOpen(false)}>×</button>
             </div>
             <div className="ink-modal-body">
-              <div className="ink-fgrid">
+              <div className="ink-fgrid ink-fgrid-3">
                 <div className="ink-fg">
                   <label>Client</label>
-                  <select value={form.client_id ?? ""} onChange={(e) => setF("client_id", e.target.value || null)}>
+                  <select value={form.client_id ?? ""} onChange={(e) => pickClient(e.target.value || null)}>
                     <option value="">— Select Client —</option>
-                    {clients.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                    {clients.map((c) => <option key={c.id} value={c.id}>{c.name}{c.currency && c.currency !== homeCur ? " (" + c.currency + ")" : ""}</option>)}
+                  </select>
+                </div>
+                <div className="ink-fg">
+                  <label>Currency</label>
+                  <select value={formCur} disabled={editingHasPayments} onChange={(e) => setF("currency", e.target.value)}
+                    title={editingHasPayments ? "Remove payments before changing the currency" : undefined}>
+                    {Object.keys(CURRENCY_SYMBOLS).map((c) => <option key={c} value={c}>{c}</option>)}
                   </select>
                 </div>
                 <div className="ink-fg">
@@ -383,7 +406,7 @@ export function InvoicesView({
                   <select value="" onChange={(e) => { if (e.target.value) addProduct(e.target.value); }}>
                     <option value="">Choose a service to add</option>
                     {products.map((pr) => (
-                      <option key={pr.id} value={pr.id}>{pr.name} ({money(Number(pr.price) || 0, currency)})</option>
+                      <option key={pr.id} value={pr.id}>{pr.name} ({money(Number(pr.price) || 0, homeCur)})</option>
                     ))}
                   </select>
                 </div>
@@ -403,7 +426,7 @@ export function InvoicesView({
                     onChange={(e) => setItem(idx, { qty: parseFloat(e.target.value) || 0 })} className="ink-c" /></label>
                   <label className="ink-li-lbl"><span>Rate</span><input type="number" step="0.01" min="0" value={it.rate}
                     onChange={(e) => setItem(idx, { rate: parseFloat(e.target.value) || 0 })} /></label>
-                  <div className="ink-li-amt">{money((Number(it.qty) || 0) * (Number(it.rate) || 0), currency)}</div>
+                  <div className="ink-li-amt">{money((Number(it.qty) || 0) * (Number(it.rate) || 0), formCur)}</div>
                   <button className="ink-rm" onClick={() => removeItem(idx)} disabled={form.items.length === 1}>×</button>
                 </div>
               ))}
@@ -428,10 +451,10 @@ export function InvoicesView({
               </div>
 
               <div className="ink-totals">
-                <div className="ink-trow"><span>Subtotal</span><span className="ink-mono">{money(totals.sub, currency)}</span></div>
-                {totals.tax > 0 && <div className="ink-trow"><span>Tax</span><span className="ink-mono">{money(totals.tax, currency)}</span></div>}
-                {totals.disc > 0 && <div className="ink-trow"><span>Discount</span><span className="ink-mono ink-neg">-{money(totals.disc, currency)}</span></div>}
-                <div className="ink-trow ink-grand"><span>Total</span><span>{money(totals.grand, currency)}</span></div>
+                <div className="ink-trow"><span>Subtotal</span><span className="ink-mono">{money(totals.sub, formCur)}</span></div>
+                {totals.tax > 0 && <div className="ink-trow"><span>Tax</span><span className="ink-mono">{money(totals.tax, formCur)}</span></div>}
+                {totals.disc > 0 && <div className="ink-trow"><span>Discount</span><span className="ink-mono ink-neg">-{money(totals.disc, formCur)}</span></div>}
+                <div className="ink-trow ink-grand"><span>Total</span><span>{money(totals.grand, formCur)}</span></div>
               </div>
 
               <div className="ink-fgrid" style={{ marginTop: 18 }}>
@@ -496,9 +519,9 @@ export function InvoicesView({
             </div>
             <div className="ink-modal-body">
               <div className="ink-pay-sum">
-                <div><span>Total</span><strong>{money(payInv.total, currency)}</strong></div>
-                <div><span>Paid</span><strong className="g">{money(payInv.amount_paid, currency)}</strong></div>
-                <div><span>Balance due</span><strong>{money(balanceDue(payInv), currency)}</strong></div>
+                <div><span>Total</span><strong>{money(payInv.total, payCur)}</strong></div>
+                <div><span>Paid</span><strong className="g">{money(payInv.amount_paid, payCur)}</strong></div>
+                <div><span>Balance due</span><strong>{money(balanceDue(payInv), payCur)}</strong></div>
               </div>
 
               {payments.length > 0 ? (
@@ -506,7 +529,14 @@ export function InvoicesView({
                   {payments.map((p) => (
                     <div className="ink-pay-row" key={p.id}>
                       <div>
-                        <strong className="ink-mono">{money(p.amount, currency)}</strong>
+                        <strong className="ink-mono">{money(p.amount, payCur)}</strong>
+                        {(payForeign || Number(p.fee) > 0) && p.home_amount != null && (
+                          <em className="ink-pay-home">
+                            {money(p.home_amount, homeCur)} received
+                            {Number(p.fee) > 0 ? " · " + money(p.fee, homeCur) + " fees" : ""}
+                            {payForeign && Number(p.amount) > 0 ? " · rate " + ((Number(p.home_amount) + Number(p.fee)) / Number(p.amount)).toFixed(4) : ""}
+                          </em>
+                        )}
                         <span>{shortDate(p.paid_on)}{p.method ? " · " + p.method : ""}{p.note ? " · " + p.note : ""}</span>
                       </div>
                       <button className="ink-act ink-act-del" title="Remove payment" disabled={payLoading} onClick={() => onDeletePayment(p.id)}>×</button>
@@ -520,9 +550,19 @@ export function InvoicesView({
               {balanceDue(payInv) > 0 && (
                 <>
                   <h4 className="ink-pay-h">Record a payment</h4>
+                  {payForeign && (
+                    <p className="ink-pay-note">
+                      This invoice is in {payCur}. Enter what the client paid in {payCur}, then what actually
+                      landed in your account in {homeCur} after fees. Zarbill works out your real exchange
+                      rate and any gain or loss.
+                      {Number(payInv.fx_rate) > 0 && Number(payInv.fx_rate) !== 1 && (
+                        <> Rate when invoiced: 1 {payCur} = {money(Number(payInv.fx_rate), homeCur)}.</>
+                      )}
+                    </p>
+                  )}
                   <div className="ink-fgrid">
                     <div className="ink-fg">
-                      <label>Amount received</label>
+                      <label>Amount paid{payForeign ? " (" + payCur + ")" : ""}</label>
                       <input type="number" step="0.01" min="0" value={payForm.amount}
                         onChange={(e) => setPayForm({ ...payForm, amount: e.target.value })} />
                     </div>
@@ -543,6 +583,21 @@ export function InvoicesView({
                       <label>Note (optional)</label>
                       <input value={payForm.note} placeholder="e.g. deposit, EFT ref 4471"
                         onChange={(e) => setPayForm({ ...payForm, note: e.target.value })} />
+                    </div>
+                  </div>
+                  <div className="ink-fgrid">
+                    {payForeign && (
+                      <div className="ink-fg">
+                        <label>Landed in your account ({homeCur})</label>
+                        <input type="number" step="0.01" min="0" value={payForm.home_amount}
+                          placeholder={Number(payInv.fx_rate) > 0 ? "≈ " + ((parseFloat(payForm.amount) || 0) * Number(payInv.fx_rate)).toFixed(2) : ""}
+                          onChange={(e) => setPayForm({ ...payForm, home_amount: e.target.value })} />
+                      </div>
+                    )}
+                    <div className="ink-fg">
+                      <label>Fees deducted ({homeCur}, optional)</label>
+                      <input type="number" step="0.01" min="0" value={payForm.fee} placeholder="e.g. PayPal or bank fee"
+                        onChange={(e) => setPayForm({ ...payForm, fee: e.target.value })} />
                     </div>
                   </div>
                 </>
@@ -622,30 +677,30 @@ export function InvoicesView({
                       <tr key={i}>
                         <td>{li.desc}</td>
                         <td className="ink-c">{li.qty}</td>
-                        <td className="ink-r ink-mono">{money(li.rate, currency)}</td>
-                        <td className="ink-r ink-mono"><strong>{money(li.total, currency)}</strong></td>
+                        <td className="ink-r ink-mono">{money(li.rate, prevCur)}</td>
+                        <td className="ink-r ink-mono"><strong>{money(li.total, prevCur)}</strong></td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
 
                 <div className="ip-totals">
-                  <div className="ip-trow"><span>Subtotal</span><span className="ink-mono">{money(previewInv.subtotal, currency)}</span></div>
+                  <div className="ip-trow"><span>Subtotal</span><span className="ink-mono">{money(previewInv.subtotal, prevCur)}</span></div>
                   {Number(previewInv.tax_rate) > 0 && (
                     <div className="ip-trow"><span>Tax ({previewInv.tax_rate}%)</span>
-                      <span className="ink-mono">{money(round2(Number(previewInv.subtotal) * Number(previewInv.tax_rate) / 100), currency)}</span></div>
+                      <span className="ink-mono">{money(round2(Number(previewInv.subtotal) * Number(previewInv.tax_rate) / 100), prevCur)}</span></div>
                   )}
                   {Number(previewInv.discount) > 0 && (
-                    <div className="ip-trow"><span>Discount</span><span className="ink-mono">-{money(previewInv.discount, currency)}</span></div>
+                    <div className="ip-trow"><span>Discount</span><span className="ink-mono">-{money(previewInv.discount, prevCur)}</span></div>
                   )}
                   {Number(previewInv.amount_paid) > 0 && previewInv.status !== "paid" ? (
                     <>
-                      <div className="ip-trow"><span>Total</span><span className="ink-mono">{money(previewInv.total, currency)}</span></div>
-                      <div className="ip-trow"><span>Paid</span><span className="ink-mono">-{money(previewInv.amount_paid, currency)}</span></div>
-                      <div className="ip-trow ip-grand"><span>Balance Due</span><span className="ink-mono">{money(balanceDue(previewInv), currency)}</span></div>
+                      <div className="ip-trow"><span>Total</span><span className="ink-mono">{money(previewInv.total, prevCur)}</span></div>
+                      <div className="ip-trow"><span>Paid</span><span className="ink-mono">-{money(previewInv.amount_paid, prevCur)}</span></div>
+                      <div className="ip-trow ip-grand"><span>Balance Due</span><span className="ink-mono">{money(balanceDue(previewInv), prevCur)}</span></div>
                     </>
                   ) : (
-                    <div className="ip-trow ip-grand"><span>Total Due</span><span className="ink-mono">{money(previewInv.total, currency)}</span></div>
+                    <div className="ip-trow ip-grand"><span>Total Due</span><span className="ink-mono">{money(previewInv.total, prevCur)}</span></div>
                   )}
                 </div>
 
@@ -720,6 +775,8 @@ a.ink-btn { text-decoration: none; }
 .ink-pay-row span { display: block; font-size: 11px; color: var(--muted2); margin-top: 3px; }
 .ink-pay-empty { color: var(--muted); font-size: 13px; margin: 0 0 8px; }
 .ink-pay-h { font-size: 13px; margin: 18px 0 12px; }
+.ink-pay-home { display: block; font-style: normal; font-size: 11px; color: var(--electric2); margin-top: 3px; }
+.ink-pay-note { font-size: 12px; color: var(--muted2); line-height: 1.6; background: var(--ink3); border-radius: 8px; padding: 10px 12px; margin: 0 0 14px; }
 .ink-track { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; font-size: 10px; font-family: 'JetBrains Mono', monospace; color: var(--muted); white-space: nowrap; }
 .ink-track .v { color: var(--electric2); }
 .ink-acts { display: flex; gap: 2px; }
@@ -741,6 +798,7 @@ a.ink-btn { text-decoration: none; }
 .ink-modal-body { padding: 24px 26px; }
 .ink-modal-foot { padding: 18px 26px; border-top: 1px solid var(--border); display: flex; gap: 10px; justify-content: flex-end; }
 .ink-fgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.ink-fgrid-3 { grid-template-columns: 2fr 1fr 1fr; }
 .ink-fg { margin-bottom: 16px; }
 .ink-fg label { display: block; font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 7px; }
 .ink-fg input, .ink-fg select, .ink-fg textarea { width: 100%; background: var(--ink3); border: 1px solid var(--border); border-radius: 8px; color: var(--text); padding: 10px 13px; font-family: 'Syne', sans-serif; font-size: 13px; outline: none; }
@@ -813,7 +871,7 @@ a.ink-btn { text-decoration: none; }
   .ink-modal { max-height: 96vh; border-radius: 14px; }
   .ink-modal-head, .ink-modal-body { padding: 16px; }
   .ink-modal-foot { padding: 14px 16px; }
-  .ink-fgrid { grid-template-columns: 1fr; gap: 0; }
+  .ink-fgrid, .ink-fgrid-3 { grid-template-columns: 1fr; gap: 0; }
   .ink-li-head { display: none; }
   .ink-li-row { grid-template-columns: 1fr 1fr 36px; grid-template-areas: "desc desc rm" "qty rate rate" "amt amt amt"; background: var(--ink3); border: 1px solid var(--border); border-radius: 10px; padding: 10px; }
   .ink-li-row > :nth-child(1) { grid-area: desc; }

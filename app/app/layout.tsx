@@ -48,6 +48,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             <NavLink href="/app" exact icon="grid">Dashboard</NavLink>
             <NavLink href="/app/invoices" icon="file">Invoices</NavLink>
             <NavLink href="/app/quotes" icon="quote">Quotes</NavLink>
+            <NavLink href="/app/follow-ups" icon="bell">Follow-ups</NavLink>
+            <NavLink href="/app/insights" icon="chart">Insights</NavLink>
             <NavLink href="/app/clients" icon="users">Clients</NavLink>
             <NavLink href="/app/products" icon="cart">Products</NavLink>
           </div>

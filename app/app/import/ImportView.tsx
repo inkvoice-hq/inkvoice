@@ -31,6 +31,7 @@ const FIELDS: Record<Kind, Field[]> = {
     { key: "status", label: "Status", synonyms: ["status", "state", "invoice status", "payment status"] },
     { key: "paid_date", label: "Date paid", synonyms: ["paid date", "date paid", "payment date", "paid on", "last payment date"] },
     { key: "description", label: "Description", synonyms: ["description", "memo", "project", "subject", "summary", "title", "notes", "item"] },
+    { key: "currency", label: "Currency (if mixed)", synonyms: ["currency", "currency code", "invoice currency", "ccy"] },
   ],
 };
 
@@ -103,6 +104,7 @@ export function ImportView({ initialType }: { initialType: Kind }) {
         issue_date: parseDate(col(r, "issue_date"), order), due_date: parseDate(col(r, "due_date"), order),
         total, amount_paid: paid, status: col(r, "status"),
         paid_date: parseDate(col(r, "paid_date"), order), description: col(r, "description"),
+        currency: col(r, "currency"),
       };
     });
   }, [kind, body, map, order]); // eslint-disable-line react-hooks/exhaustive-deps

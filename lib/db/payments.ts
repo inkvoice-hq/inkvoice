@@ -28,7 +28,7 @@ async function recordPaymentImpl(input: PaymentInput): Promise<void> {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(input.paid_on || "")) throw new Error("Choose the date the payment was received.");
 
   const { data: inv } = await supabase
-    .from("invoices").select("id, total, amount_paid, status")
+    .from("invoices").select("id, total, amount_paid, status, currency, fx_rate")
     .eq("tenant_id", tenantId).eq("id", input.invoice_id).maybeSingle();
   if (!inv) throw new Error("Invoice not found.");
 
@@ -37,8 +37,22 @@ async function recordPaymentImpl(input: PaymentInput): Promise<void> {
     throw new Error("That's more than the balance due (" + remaining.toFixed(2) + ").");
   }
 
+  // Fees and what actually arrived, both in the account currency.
+  const { data: t } = await supabase.from("tenants").select("currency").eq("id", tenantId).maybeSingle();
+  const foreign = !!inv.currency && inv.currency !== (t?.currency || inv.currency);
+  const fee = round2(Math.max(0, Number(input.fee) || 0));
+  const rate = Number(inv.fx_rate) > 0 ? Number(inv.fx_rate) : 1;
+  let home: number;
+  if (input.home_amount !== null && input.home_amount !== undefined && String(input.home_amount) !== "" && Number.isFinite(Number(input.home_amount))) {
+    home = round2(Math.max(0, Number(input.home_amount)));
+  } else {
+    home = round2((foreign ? amount * rate : amount) - fee); // estimate when not given
+  }
+  if (!foreign && home + fee > amount + 0.001) throw new Error("Fees plus the amount received can't be more than the payment.");
+
   const { error } = await supabase.from("payments").insert({
     tenant_id: tenantId, invoice_id: inv.id, amount, paid_on: input.paid_on,
+    home_amount: home, fee,
     method: (input.method || "").trim().slice(0, 60) || null,
     note: (input.note || "").trim().slice(0, 300) || null,
   });

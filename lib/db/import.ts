@@ -8,7 +8,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { requireTenant } from "@/lib/db/context";
 import { planLimits, isUnlimited } from "@/lib/plans";
-import { round2 } from "@/lib/format";
+import { round2, CURRENCY_SYMBOLS } from "@/lib/format";
+import { fxRate } from "@/lib/fx";
 
 export type ImportClientRow = {
   name?: string; contact?: string; email?: string; phone?: string; address?: string;
@@ -17,6 +18,7 @@ export type ImportClientRow = {
 export type ImportInvoiceRow = {
   number?: string; client?: string; client_email?: string; issue_date?: string | null; due_date?: string | null;
   total?: number | null; amount_paid?: number | null; status?: string; paid_date?: string | null; description?: string;
+  currency?: string;
 };
 export type ImportResult = { created: number; skipped: number; limited: number; messages: string[] };
 
@@ -28,7 +30,7 @@ const key = (v: string) => v.trim().toLowerCase();
 async function ctx() {
   const { tenantId } = await requireTenant();
   const supabase = await createClient();
-  const { data: tenant } = await supabase.from("tenants").select("plan, next_invoice_number").eq("id", tenantId).maybeSingle();
+  const { data: tenant } = await supabase.from("tenants").select("plan, next_invoice_number, currency").eq("id", tenantId).maybeSingle();
   return { tenantId, supabase, tenant };
 }
 
@@ -110,8 +112,15 @@ export async function importInvoices(rows: ImportInvoiceRow[], opts: { remind?: 
     return data.id;
   }
 
+  const home = tenant?.currency || "USD";
+  const rates = new Map<string, number | null>([[home, 1]]);
+  async function rateFor(cur: string) {
+    if (!rates.has(cur)) rates.set(cur, await fxRate(cur, home));
+    return rates.get(cur) ?? null;
+  }
+
   const invRows: any[] = [];
-  const paidByNumber = new Map<string, { amount: number; date: string }>();
+  const paidByNumber = new Map<string, { amount: number; date: string; home: number }>();
   let highest = 0;
 
   for (const r of (rows ?? []).slice(0, 5000)) {
@@ -127,6 +136,10 @@ export async function importInvoices(rows: ImportInvoiceRow[], opts: { remind?: 
     const issue = d(r.issue_date), due = d(r.due_date) ?? issue;
     const paidDate = d(r.paid_date) ?? (status === "paid" ? (due ?? issue) : null);
 
+    const rowCur = s(r.currency, 8).toUpperCase();
+    const currency = CURRENCY_SYMBOLS[rowCur] ? rowCur : home;
+    const fx_rate = await rateFor(currency);
+
     numbers.add(key(number)); invRoom--;
     const m = number.match(/(\d+)\s*$/); if (m) highest = Math.max(highest, parseInt(m[1], 10));
 
@@ -138,12 +151,15 @@ export async function importInvoices(rows: ImportInvoiceRow[], opts: { remind?: 
       description: s(r.description, 300) || null,
       status, tax_rate: 0, discount: 0, notes: null, recurring: null,
       items: [{ desc: s(r.description, 300) || "Imported invoice " + number, qty: 1, rate: total, total }],
-      subtotal: total, total, amount_paid: amountPaid,
+      subtotal: total, total, amount_paid: amountPaid, currency, fx_rate,
       // Imported history is not chased unless asked for.
       reminders_sent: opts.remind ? 0 : 3, due_soon_sent: !opts.remind,
-      sent_at: status === "draft" ? null : new Date().toISOString(),
+      sent_at: null, // not emailed by Zarbill
     });
-    if (amountPaid > 0) paidByNumber.set(number, { amount: amountPaid, date: paidDate ?? issue ?? new Date().toISOString().slice(0, 10) });
+    if (amountPaid > 0) paidByNumber.set(number, {
+      amount: amountPaid, home: round2(amountPaid * (fx_rate || 1)),
+      date: paidDate ?? issue ?? new Date().toISOString().slice(0, 10),
+    });
   }
 
   for (let i = 0; i < invRows.length; i += 300) {
@@ -153,6 +169,7 @@ export async function importInvoices(rows: ImportInvoiceRow[], opts: { remind?: 
     res.created += made?.length ?? 0;
     const pays = (made ?? []).filter((m: any) => paidByNumber.has(m.number)).map((m: any) => ({
       tenant_id: tenantId, invoice_id: m.id, amount: paidByNumber.get(m.number)!.amount,
+      home_amount: paidByNumber.get(m.number)!.home, fee: 0,
       paid_on: paidByNumber.get(m.number)!.date, method: "Imported", note: "Imported from CSV",
     }));
     if (pays.length) {

@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import type { Quote, QuoteFormInput, InvoiceItem, Client, Product, QuoteStatus } from "@/lib/db/types";
 import { createQuote, updateQuote, deleteQuote, setQuoteStatus, convertQuoteToInvoice } from "@/lib/db/quotes";
 import { sendQuoteEmail } from "@/lib/email/quote";
-import { money, round2, todayISO, addDaysISO } from "@/lib/format";
+import { money, round2, todayISO, addDaysISO, curOf, CURRENCY_SYMBOLS } from "@/lib/format";
 import { invoiceCss } from "../invoices/InvoicesView";
 
 type Tab = "all" | QuoteStatus | "expired";
@@ -55,6 +55,12 @@ export function QuotesView({ initialQuotes, clients, products, suggestedNumber, 
   }, [form.items, form.tax_rate, form.discount]);
 
   const accepted = quotes.filter((q) => q.status === "accepted").length;
+  const formCur = curOf(form, currency);
+
+  function pickClient(id: string | null) {
+    const c = clients.find((x) => x.id === id);
+    setForm((f) => ({ ...f, client_id: id, currency: c?.currency || currency }));
+  }
 
   function openNew() {
     setEditId(null); setForm(emptyForm(suggestedNumber, defaultTaxRate)); setErr(null); setModalOpen(true);
@@ -62,7 +68,7 @@ export function QuotesView({ initialQuotes, clients, products, suggestedNumber, 
   function openEdit(q: Quote) {
     setEditId(q.id);
     setForm({
-      client_id: q.client_id, number: q.number, issue_date: q.issue_date, valid_until: q.valid_until,
+      client_id: q.client_id, currency: q.currency || currency, number: q.number, issue_date: q.issue_date, valid_until: q.valid_until,
       description: q.description ?? "", tax_rate: Number(q.tax_rate) || 0, discount: Number(q.discount) || 0,
       notes: q.notes ?? "", items: (q.items ?? []).length ? q.items : [{ desc: "", qty: 1, rate: 0, total: 0 }],
     });
@@ -185,7 +191,7 @@ export function QuotesView({ initialQuotes, clients, products, suggestedNumber, 
                         <td><strong className="ink-mono">{q.number}</strong></td>
                         <td>{clientName(q.client_id)}</td>
                         <td className="ink-muted ink-trunc">{q.description || "—"}</td>
-                        <td className="ink-mono ink-bold">{money(q.total, currency)}</td>
+                        <td className="ink-mono ink-bold">{money(q.total, curOf(q, currency))}</td>
                         <td className="ink-muted ink-mono ink-sm">{shortDate(q.issue_date)}</td>
                         <td className="ink-muted ink-mono ink-sm">{shortDate(q.valid_until)}</td>
                         <td>
@@ -248,12 +254,18 @@ export function QuotesView({ initialQuotes, clients, products, suggestedNumber, 
               <button className="ink-close" onClick={() => setModalOpen(false)}>×</button>
             </div>
             <div className="ink-modal-body">
-              <div className="ink-fgrid">
+              <div className="ink-fgrid ink-fgrid-3">
                 <div className="ink-fg">
                   <label>Client</label>
-                  <select value={form.client_id ?? ""} onChange={(e) => setF("client_id", e.target.value || null)}>
+                  <select value={form.client_id ?? ""} onChange={(e) => pickClient(e.target.value || null)}>
                     <option value="">— Select Client —</option>
-                    {clients.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                    {clients.map((c) => <option key={c.id} value={c.id}>{c.name}{c.currency && c.currency !== currency ? " (" + c.currency + ")" : ""}</option>)}
+                  </select>
+                </div>
+                <div className="ink-fg">
+                  <label>Currency</label>
+                  <select value={formCur} onChange={(e) => setF("currency", e.target.value)}>
+                    {Object.keys(CURRENCY_SYMBOLS).map((c) => <option key={c} value={c}>{c}</option>)}
                   </select>
                 </div>
                 <div className="ink-fg">
@@ -295,7 +307,7 @@ export function QuotesView({ initialQuotes, clients, products, suggestedNumber, 
                     onChange={(e) => setItem(idx, { qty: parseFloat(e.target.value) || 0 })} className="ink-c" /></label>
                   <label className="ink-li-lbl"><span>Rate</span><input type="number" step="0.01" min="0" value={it.rate}
                     onChange={(e) => setItem(idx, { rate: parseFloat(e.target.value) || 0 })} /></label>
-                  <div className="ink-li-amt">{money((Number(it.qty) || 0) * (Number(it.rate) || 0), currency)}</div>
+                  <div className="ink-li-amt">{money((Number(it.qty) || 0) * (Number(it.rate) || 0), formCur)}</div>
                   <button className="ink-rm" onClick={() => setForm((f) => ({ ...f, items: f.items.filter((_, i) => i !== idx) }))} disabled={form.items.length === 1}>×</button>
                 </div>
               ))}
@@ -316,10 +328,10 @@ export function QuotesView({ initialQuotes, clients, products, suggestedNumber, 
               </div>
 
               <div className="ink-totals">
-                <div className="ink-trow"><span>Subtotal</span><span className="ink-mono">{money(totals.sub, currency)}</span></div>
-                {totals.tax > 0 && <div className="ink-trow"><span>Tax</span><span className="ink-mono">{money(totals.tax, currency)}</span></div>}
-                {totals.disc > 0 && <div className="ink-trow"><span>Discount</span><span className="ink-mono ink-neg">-{money(totals.disc, currency)}</span></div>}
-                <div className="ink-trow ink-grand"><span>Total</span><span>{money(totals.grand, currency)}</span></div>
+                <div className="ink-trow"><span>Subtotal</span><span className="ink-mono">{money(totals.sub, formCur)}</span></div>
+                {totals.tax > 0 && <div className="ink-trow"><span>Tax</span><span className="ink-mono">{money(totals.tax, formCur)}</span></div>}
+                {totals.disc > 0 && <div className="ink-trow"><span>Discount</span><span className="ink-mono ink-neg">-{money(totals.disc, formCur)}</span></div>}
+                <div className="ink-trow ink-grand"><span>Total</span><span>{money(totals.grand, formCur)}</span></div>
               </div>
 
               <div className="ink-fg" style={{ marginTop: 18 }}>

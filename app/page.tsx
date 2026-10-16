@@ -134,16 +134,18 @@ export default async function Landing() {
             <Feature title={isZA ? "Rands or dollars" : "Any currency"}>
               {isZA ? "Bill local clients in ZAR and international clients in USD, GBP, EUR and more." : "Bill each client in the currency they pay in: USD, GBP, EUR and more."}
             </Feature>
-            <Feature title="Automatic payment reminders">
-              Late invoice? Zarbill politely chases your client for you at 3, 10 and 21 days
-              overdue, and shows you when they&apos;ve opened it.
+            <Feature title="Reminders that know your client">
+              Late invoice? Zarbill chases it for you, worded for each client: resent if they never
+              opened it, softer for good payers, firmer for slow ones. Claude drafts personal
+              follow-ups you approve.
             </Feature>
             <Feature title="Tax and discounts handled">
               Set a default VAT rate and it applies to new invoices. Add a discount per invoice
               when you need to.
             </Feature>
-            <Feature title="Works on your phone">
-              Your data lives in your account, not your browser. Log in anywhere and it&apos;s there.
+            <Feature title="Know what's coming in">
+              A 30/60/90-day cash forecast based on how each client actually pays, plus what fees
+              and exchange rates really cost you.
             </Feature>
             <Feature title="Quotes that become invoices">
               Send a quote, your client accepts it online, and it turns into an invoice in one

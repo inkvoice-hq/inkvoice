@@ -6,6 +6,8 @@ import { requireTenant } from "@/lib/db/context";
 import { assertCanCreate } from "@/lib/db/guard";
 import { round2, addInterval, todayISO } from "@/lib/format";
 import { computeTotals } from "@/lib/totals";
+import { CURRENCY_SYMBOLS } from "@/lib/format";
+import { fxRate } from "@/lib/fx";
 import { recalcInvoice, payRemainingBalance } from "@/lib/db/ledger";
 import type { Invoice, InvoiceFormInput } from "@/lib/db/types";
 
@@ -20,6 +22,26 @@ function nextOccurrence(anchor: string | null, recurring: string | null, after =
     if (d > after) return d;
   }
   return null;
+}
+
+/**
+ * Which currency an invoice is in, and the rate to the account ("home")
+ * currency at the time it is saved: explicit choice → client's currency →
+ * account currency.
+ */
+async function currencyFor(
+  supabase: Awaited<ReturnType<typeof createClient>>, tenantId: string,
+  wanted: string | null | undefined, clientId: string | null
+): Promise<{ currency: string; fx_rate: number | null }> {
+  const { data: t } = await supabase.from("tenants").select("currency").eq("id", tenantId).maybeSingle();
+  const home = t?.currency || "USD";
+  let currency = (wanted || "").toUpperCase();
+  if (!CURRENCY_SYMBOLS[currency] && clientId) {
+    const { data: c } = await supabase.from("clients").select("currency").eq("tenant_id", tenantId).eq("id", clientId).maybeSingle();
+    currency = (c?.currency || "").toUpperCase();
+  }
+  if (!CURRENCY_SYMBOLS[currency]) currency = home;
+  return { currency, fx_rate: currency === home ? 1 : await fxRate(currency, home) };
 }
 
 function cleanDate(d: string | null | undefined): string | null {
@@ -70,12 +92,15 @@ async function createInvoice_Impl(input: InvoiceFormInput): Promise<Invoice> {
   const supabase = await createClient();
 
   const { items, subtotal, total } = computeTotals(input.items, input.tax_rate, input.discount);
+  const cur = await currencyFor(supabase, tenantId, input.currency, input.client_id || null);
 
   const { data, error } = await supabase
     .from("invoices")
     .insert({
       tenant_id: tenantId,
       client_id: input.client_id || null,
+      currency: cur.currency,
+      fx_rate: cur.fx_rate,
       number: input.number.trim(),
       issue_date: input.issue_date || null,
       due_date: input.due_date || null,
@@ -127,9 +152,20 @@ async function updateInvoiceImpl(id: string, input: InvoiceFormInput): Promise<I
   const { items, subtotal, total } = computeTotals(input.items, input.tax_rate, input.discount);
 
   const { data: before } = await supabase
-    .from("invoices").select("status, recurring, issue_date, recur_next_date")
+    .from("invoices").select("status, recurring, issue_date, recur_next_date, currency, fx_rate, client_id, amount_paid")
     .eq("tenant_id", tenantId).eq("id", id).maybeSingle();
   if (!before) throw new Error("Invoice not found.");
+
+  // Keep the original exchange rate unless the currency itself changes.
+  const wanted = (input.currency || before.currency || "").toUpperCase();
+  let currency = before.currency as string | null, fx_rate = before.fx_rate as number | null;
+  if (!before.currency || wanted !== before.currency) {
+    if (before.currency && Number(before.amount_paid) > 0 && before.status !== "paid") {
+      throw new Error("This invoice already has payments recorded in " + before.currency + ". Remove them before changing its currency.");
+    }
+    const cur = await currencyFor(supabase, tenantId, wanted || null, input.client_id || null);
+    currency = cur.currency; fx_rate = cur.fx_rate;
+  }
 
   // Un-marking a paid invoice removes the quick "Marked paid" entries.
   // Real recorded payments stay; remove those from the Payments panel.
@@ -149,6 +185,8 @@ async function updateInvoiceImpl(id: string, input: InvoiceFormInput): Promise<I
     .from("invoices")
     .update({
       client_id: input.client_id || null,
+      currency,
+      fx_rate,
       number: input.number.trim(),
       issue_date: input.issue_date || null,
       due_date: input.due_date || null,

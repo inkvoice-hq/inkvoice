@@ -3,7 +3,7 @@
 import { Resend } from "resend";
 import { createClient } from "@/lib/supabase/server";
 import { requireTenant } from "@/lib/db/context";
-import { money } from "@/lib/format";
+import { money, curOf } from "@/lib/format";
 import { niceDate, esc, SITE_URL } from "@/lib/reminders";
 
 export async function sendQuoteEmail(quoteId: string): Promise<{ ok: boolean; message: string }> {
@@ -24,7 +24,7 @@ export async function sendQuoteEmail(quoteId: string): Promise<{ ok: boolean; me
   const key = process.env.RESEND_API_KEY;
   if (!key) return { ok: false, message: "Email sending is not configured yet." };
 
-  const cur = tenant?.currency ?? "ZAR";
+  const cur = curOf(q, tenant?.currency);
   const biz = tenant?.name || "Your Business";
   const hi = (client.contact || "").trim().split(/\s+/)[0] || client.name;
   const link = SITE_URL + "/q/" + q.public_token;
