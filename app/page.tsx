@@ -2,9 +2,9 @@ import { headers } from "next/headers";
 import Link from "next/link";
 
 export const metadata = {
-  title: "Zarbill — Invoicing for freelancers and small studios",
+  title: "Zarbill — From invoice sent to money received",
   description:
-    "Create professional invoices, track who owes you, and get paid. Built for freelancers, creators and small studios. Free to start.",
+    "Invoicing for freelancers paid by clients abroad. Bill in dollars, pounds or euros, get paid, match the payment from Wise, Payoneer, PayPal or your bank, and see exactly what you earned after fees and exchange rates.",
 };
 
 export default async function Landing() {
@@ -40,15 +40,16 @@ export default async function Landing() {
 
         <section className="lp-hero">
           <div className="lp-hero-copy">
-            <p className="lp-eyebrow">{isZA ? "SARS-ready invoicing for South African freelancers" : "For freelancers & small businesses everywhere"}</p>
+            <p className="lp-eyebrow">{isZA ? "For South Africans paid by clients abroad" : "For freelancers paid by clients abroad"}</p>
             <h1>
-              Send the invoice.<br />
-              <em>Then get paid.</em>
+              From invoice sent<br />
+              <em>to money received.</em>
             </h1>
             <p className="lp-sub">
-              Zarbill turns your work into a professional invoice in under a minute —
-              then keeps track of who has paid, who hasn&apos;t, and who is overdue.
-              No spreadsheets. No forgotten follow-ups.
+              Invoice in dollars, pounds or euros. Zarbill follows up for you, matches the
+              payment when it lands in {isZA ? "Wise, Payoneer, PayPal or your FNB or Capitec account" : "Wise, Payoneer, PayPal or your bank"},
+              and shows exactly what you earned in {isZA ? "rands" : "your own currency"}, after fees and exchange
+              rates. Without the financial admin.
             </p>
             <div className="lp-cta">
               <Link href="/login" className="lp-btn-primary">Start free</Link>
@@ -80,16 +81,22 @@ export default async function Landing() {
               </div>
               <table className="lp-inv-tbl">
                 <tbody>
-                  <tr><td>Brand video — 90 sec</td><td>1</td><td>{isZA ? "R 12 000.00" : "$12,000.00"}</td></tr>
-                  <tr><td>Social cutdowns</td><td>4</td><td>{isZA ? "R 6 400.00" : "$6,400.00"}</td></tr>
-                  <tr><td>Colour grade</td><td>1</td><td>{isZA ? "R 2 200.00" : "$2,200.00"}</td></tr>
+                  <tr><td>Brand video — 90 sec</td><td>1</td><td>$1,200.00</td></tr>
+                  <tr><td>Social cutdowns</td><td>4</td><td>$640.00</td></tr>
+                  <tr><td>Colour grade</td><td>1</td><td>$220.00</td></tr>
                 </tbody>
               </table>
               <div className="lp-inv-total">
                 <span>Total due</span>
-                <strong>{isZA ? "R 20 600.00" : "$20,600.00"}</strong>
+                <div className="lp-inv-stamp">PAID</div>
+                <strong>$2,060.00</strong>
               </div>
-              <div className="lp-inv-stamp">PAID</div>
+              <div className="lp-landed">
+                <div className="lp-landed-h">Matched from your {isZA ? "Payoneer" : "Wise"} statement</div>
+                <div className="lp-landed-row"><span>Client paid</span><b>$2,060.00</b></div>
+                <div className="lp-landed-row"><span>Fees</span><b>{isZA ? "−R 712.40" : "−€19.40"}</b></div>
+                <div className="lp-landed-row lp-landed-tot"><span>Landed in your account</span><b>{isZA ? "R 33 186.20" : "€1,876.30"}</b></div>
+              </div>
             </div>
           </div>
         </section>
@@ -99,26 +106,27 @@ export default async function Landing() {
           <ol className="lp-steps">
             <li>
               <span className="lp-step-n">01</span>
-              <h3>Save your clients and services</h3>
+              <h3>Invoice in their currency</h3>
               <p>
-                Add a client once. Save the work you do most — a day rate, a retainer,
-                an edit — with its price. You never type them twice.
+                Set each client&apos;s currency once. Invoices, quotes and reminders go out in
+                dollars, pounds or euros, with a Pay now link and a page that tells you when
+                they&apos;ve opened it.
               </p>
             </li>
             <li>
               <span className="lp-step-n">02</span>
-              <h3>Build the invoice</h3>
+              <h3>Zarbill does the chasing</h3>
               <p>
-                Pick the client, pull in your saved services, and the totals, tax and
-                due date fill themselves in. Preview it, then save it as a PDF.
+                Reminders go out on their own, worded for each client. When something needs a
+                personal touch, Claude drafts the email and you approve it.
               </p>
             </li>
             <li>
               <span className="lp-step-n">03</span>
-              <h3>Track what you&apos;re owed</h3>
+              <h3>Match it, see what you earned</h3>
               <p>
-                Every invoice sits in draft, unpaid, paid or overdue. Open the app and
-                you know exactly where your money is.
+                Upload your {isZA ? "Payoneer, Wise, PayPal or bank" : "Wise, Payoneer, PayPal or bank"} statement. Zarbill matches each payment to its
+                invoice and records the fees and the {isZA ? "rands" : "money"} that actually landed. You just confirm.
               </p>
             </li>
           </ol>
@@ -353,11 +361,18 @@ a { color: inherit; text-decoration: none; }
 .lp-inv-total { display: flex; justify-content: space-between; align-items: baseline; border-top: 2px solid #111; padding-top: 13px; }
 .lp-inv-total span { font-size: 13px; color: #666; }
 .lp-inv-total strong { font-size: 19px; font-family: 'JetBrains Mono', monospace; }
+.lp-inv-total { position: relative; }
 .lp-inv-stamp {
-  position: absolute; top: 30px; right: 34px; border: 3px solid #22c87a; color: #22c87a;
+  position: absolute; top: 4px; left: 92px; border: 3px solid #22c87a; color: #22c87a;
   font-weight: 800; font-size: 13px; letter-spacing: 2px; padding: 5px 14px; border-radius: 5px;
   transform: rotate(-13deg); opacity: .92;
 }
+.lp-landed { margin-top: 18px; background: #f3fbf7; border: 1px solid #c8eedb; border-radius: 10px; padding: 12px 14px; }
+.lp-landed-h { font-family: 'JetBrains Mono', monospace; font-size: 8.5px; letter-spacing: 1.6px; color: #1a9a5c; text-transform: uppercase; margin-bottom: 8px; }
+.lp-landed-row { display: flex; justify-content: space-between; font-size: 12px; color: #555; padding: 2px 0; }
+.lp-landed-row b { font-family: 'JetBrains Mono', monospace; font-weight: 500; color: #111; }
+.lp-landed-tot { border-top: 1px solid #c8eedb; margin-top: 6px; padding-top: 7px; font-size: 13px; color: #111; }
+.lp-landed-tot b { font-weight: 700; color: #0e7a47; }
 .lp-section { max-width: 1120px; margin: 0 auto; padding: 90px 40px; }
 .lp-section-alt {
   border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); max-width: none;
@@ -409,7 +424,7 @@ a { color: inherit; text-decoration: none; }
 .lp-foot-note { font-size: 12px; color: var(--muted2); margin: 0; line-height: 1.7; }
 @media (max-width: 940px) {
   .lp-hero { grid-template-columns: 1fr; gap: 56px; padding: 60px 24px 70px; }
-  .lp-hero-art { order: -1; }
+  .lp-hero { gap: 40px; padding-top: 40px; }
   .lp-invoice { transform: none; animation: none; }
   .lp-steps, .lp-grid, .lp-plans { grid-template-columns: 1fr; }
   .lp-section { padding: 60px 24px; }

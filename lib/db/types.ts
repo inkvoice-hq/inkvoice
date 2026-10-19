@@ -93,6 +93,8 @@ export interface Invoice {
   scheduled_send_date: string | null;
   sent_at: string | null;
   due_soon_sent: boolean;
+  disputed_at: string | null;
+  dispute_note: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -107,6 +109,8 @@ export interface Payment {
   note: string | null;
   home_amount: number | null;
   fee: number;
+  home_estimated?: boolean;
+  source?: string | null;
   created_at: string;
 }
 

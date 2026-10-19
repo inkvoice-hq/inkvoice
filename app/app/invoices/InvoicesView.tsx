@@ -5,8 +5,8 @@ import { useState, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { Invoice, InvoiceItem, Client, Product, InvoiceFormInput, Payment } from "@/lib/db/types";
-import { listPayments, recordPayment, deletePayment } from "@/lib/db/payments";
-import { createInvoice_, updateInvoice, deleteInvoice, markInvoicePaid } from "@/lib/db/invoices";
+import { listPayments, recordPayment, deletePayment, updatePaymentHome } from "@/lib/db/payments";
+import { createInvoice_, updateInvoice, deleteInvoice, markInvoicePaid, setDisputed } from "@/lib/db/invoices";
 import { sendInvoiceEmail } from "@/lib/email/invoice";
 import { money, round2, todayISO, addDaysISO, displayStatus, balanceDue, curOf, CURRENCY_SYMBOLS } from "@/lib/format";
 
@@ -201,6 +201,17 @@ export function InvoicesView({
     } finally { setPayLoading(false); }
   }
 
+  async function onFixHome(p: Payment) {
+    const v = prompt("How much landed in your account in " + homeCur + " for this payment (after fees)?", String(p.home_amount ?? ""));
+    if (v === null) return;
+    const f = prompt("Fees taken, in " + homeCur + " (leave as is if unsure)", String(p.fee ?? 0));
+    try {
+      unwrap(await updatePaymentHome(p.id, parseFloat(v), f === null ? null : parseFloat(f)));
+      if (payInvId) setPayments(await listPayments(payInvId));
+      router.refresh();
+    } catch (e: any) { setPayErr(e?.message || "Could not update."); }
+  }
+
   async function onDeletePayment(id: string) {
     if (!payInvId || !confirm("Remove this payment?")) return;
     setPayLoading(true); setPayErr(null);
@@ -211,6 +222,19 @@ export function InvoicesView({
     } catch (e: any) {
       setPayErr(e?.message || "Could not remove payment.");
     } finally { setPayLoading(false); }
+  }
+
+  async function onDispute(inv: Invoice) {
+    if (inv.disputed_at) {
+      if (!confirm("Resolve the dispute on " + inv.number + "? Automatic reminders will start again.")) return;
+      try { unwrap(await setDisputed(inv.id, false, "")); router.refresh(); }
+      catch (e: any) { alert(e?.message || "Failed."); }
+      return;
+    }
+    const note = prompt("Mark " + inv.number + " as disputed? Automatic reminders pause until you resolve it.\n\nWhat's the issue? (optional)");
+    if (note === null) return;
+    try { unwrap(await setDisputed(inv.id, true, note)); router.refresh(); }
+    catch (e: any) { alert(e?.message || "Failed."); }
   }
 
   async function onMarkPaid(id: string) {
@@ -305,8 +329,9 @@ export function InvoicesView({
                         <td className="ink-muted ink-mono ink-sm">{inv.due_date || "—"}</td>
                         <td>
                           <span className={"ink-badge b-" + st}>{st}</span>
-                          {((inv.status !== "draft" && inv.status !== "paid" && (inv.viewed_at || inv.reminders_sent > 0)) || inv.recurring || inv.scheduled_send_date) && (
+                          {((inv.status !== "draft" && inv.status !== "paid" && (inv.viewed_at || inv.reminders_sent > 0 || inv.disputed_at)) || inv.recurring || inv.scheduled_send_date) && (
                             <div className="ink-track">
+                              {inv.disputed_at && inv.status !== "paid" && <span className="d" title={inv.dispute_note || "Reminders paused"}>&#9873; Disputed</span>}
                               {inv.status !== "paid" && inv.viewed_at && <span className="v" title={"Client opened it on " + inv.viewed_at.slice(0, 10)}>&#9679; Viewed</span>}
                               {inv.status !== "paid" && inv.reminders_sent > 0 && <span>{inv.reminders_sent} reminder{inv.reminders_sent === 1 ? "" : "s"} sent</span>}
                               {inv.scheduled_send_date && !inv.sent_at && <span className="s">Sends {shortDate(inv.scheduled_send_date)}</span>}
@@ -333,6 +358,11 @@ export function InvoicesView({
                             {inv.status !== "draft" && (
                               <button className="ink-act" title="Payments" onClick={() => openPayments(inv)}>
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/><path d="M6 12h.01M18 12h.01"/></svg>
+                              </button>
+                            )}
+                            {inv.status === "unpaid" && (
+                              <button className={"ink-act" + (inv.disputed_at ? " ink-act-on" : "")} title={inv.disputed_at ? "Resolve dispute" : "Mark disputed (pauses reminders)"} onClick={() => onDispute(inv)}>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
                               </button>
                             )}
                             {inv.status !== "paid" && (
@@ -532,7 +562,10 @@ export function InvoicesView({
                         <strong className="ink-mono">{money(p.amount, payCur)}</strong>
                         {(payForeign || Number(p.fee) > 0) && p.home_amount != null && (
                           <em className="ink-pay-home">
-                            {money(p.home_amount, homeCur)} received
+                            {p.home_estimated ? "≈ " : ""}{money(p.home_amount, homeCur)} {p.home_estimated ? "estimated" : "received"}
+                            {p.home_estimated && (
+                              <button className="ink-link-btn" onClick={() => onFixHome(p)}>enter actual</button>
+                            )}
                             {Number(p.fee) > 0 ? " · " + money(p.fee, homeCur) + " fees" : ""}
                             {payForeign && Number(p.amount) > 0 ? " · rate " + ((Number(p.home_amount) + Number(p.fee)) / Number(p.amount)).toFixed(4) : ""}
                           </em>
@@ -761,6 +794,8 @@ a.ink-btn { text-decoration: none; }
 .ink-due-sub { font-size: 10px; color: var(--electric2); font-weight: 400; margin-top: 3px; }
 .ink-track .s { color: var(--gold); }
 .ink-track .r { color: var(--violet); }
+.ink-track .d { color: var(--electric3); }
+.ink-act-on { color: var(--electric3); }
 .ink-check { display: flex; gap: 10px; align-items: flex-start; background: var(--ink3); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; margin: 0 0 16px; font-size: 13px; cursor: pointer; }
 .ink-check input { margin-top: 3px; accent-color: var(--electric); }
 .ink-check small { display: block; color: var(--muted); font-size: 11px; line-height: 1.5; margin-top: 4px; }
@@ -776,6 +811,7 @@ a.ink-btn { text-decoration: none; }
 .ink-pay-empty { color: var(--muted); font-size: 13px; margin: 0 0 8px; }
 .ink-pay-h { font-size: 13px; margin: 18px 0 12px; }
 .ink-pay-home { display: block; font-style: normal; font-size: 11px; color: var(--electric2); margin-top: 3px; }
+.ink-link-btn { background: none; border: none; color: var(--gold); text-decoration: underline; cursor: pointer; font-size: 11px; padding: 0 0 0 6px; font-family: inherit; }
 .ink-pay-note { font-size: 12px; color: var(--muted2); line-height: 1.6; background: var(--ink3); border-radius: 8px; padding: 10px 12px; margin: 0 0 14px; }
 .ink-track { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; font-size: 10px; font-family: 'JetBrains Mono', monospace; color: var(--muted); white-space: nowrap; }
 .ink-track .v { color: var(--electric2); }

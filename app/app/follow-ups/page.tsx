@@ -17,7 +17,7 @@ export default async function FollowUpsPage() {
   const [{ data: tenant }, { data: inv }, { data: clients }, { count: used }, { data: sent }] = await Promise.all([
     supabase.from("tenants").select("currency, plan").eq("id", tenantId).maybeSingle(),
     supabase.from("invoices")
-      .select("id, number, client_id, status, issue_date, due_date, paid_date, total, amount_paid, currency, fx_rate, recurring, recur_next_date, viewed_at, reminders_sent, sent_at, last_reminder_at")
+      .select("id, number, client_id, status, issue_date, due_date, paid_date, total, amount_paid, currency, fx_rate, recurring, recur_next_date, viewed_at, reminders_sent, sent_at, last_reminder_at, disputed_at, dispute_note")
       .eq("tenant_id", tenantId),
     supabase.from("clients").select("id, name, email").eq("tenant_id", tenantId),
     supabase.from("ai_drafts").select("id", { count: "exact", head: true }).eq("tenant_id", tenantId).gte("created_at", monthStart),

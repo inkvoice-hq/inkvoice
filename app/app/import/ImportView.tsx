@@ -52,7 +52,26 @@ function guessMapping(kind: Kind, headers: string[]): Record<string, number> {
   return out;
 }
 
-export function ImportView({ initialType }: { initialType: Kind }) {
+/** Tax years: South Africa runs 1 March – end of February; elsewhere calendar years. */
+function taxYears(home: string) {
+  const now = new Date();
+  const y = now.getUTCFullYear();
+  const out: { label: string; from: string; to: string }[] = [];
+  if (home === "ZAR") {
+    const start = now.getUTCMonth() >= 2 ? y : y - 1; // March or later
+    for (let s = start; s > start - 4; s--) {
+      const endFeb = new Date(Date.UTC(s + 1, 2, 0)).toISOString().slice(0, 10);
+      out.push({ label: `${s}/${String(s + 1).slice(2)} tax year (1 Mar ${s} – ${endFeb.slice(8)} Feb ${s + 1})`, from: `${s}-03-01`, to: endFeb });
+    }
+  } else {
+    for (let s = y; s > y - 4; s--) out.push({ label: String(s), from: `${s}-01-01`, to: `${s}-12-31` });
+  }
+  return out;
+}
+
+export function ImportView({ initialType, homeCurrency = "ZAR" }: { initialType: Kind; homeCurrency?: string }) {
+  const years = taxYears(homeCurrency);
+  const [yearIdx, setYearIdx] = useState(0);
   const router = useRouter();
   const [kind, setKind] = useState<Kind>(initialType);
   const [fileName, setFileName] = useState("");
@@ -149,6 +168,21 @@ export function ImportView({ initialType }: { initialType: Kind }) {
               <a className="ink-btn ink-btn-ghost" href="/app/export/invoices">Invoices</a>
               <a className="ink-btn ink-btn-ghost" href="/app/export/quotes">Quotes</a>
               <a className="ink-btn ink-btn-ghost" href="/app/export/payments">Payments</a>
+            </div>
+            <div className="im-income">
+              <div>
+                <strong>Income report for your tax practitioner</strong>
+                <p className="ink-hint" style={{ margin: "4px 0 0" }}>
+                  Every payment received in the period, in {homeCurrency}: what each invoice was worth, the fees taken
+                  and what actually landed, with the effective exchange rate on foreign payments.
+                </p>
+              </div>
+              <div className="im-income-go">
+                <select value={yearIdx} onChange={(e) => setYearIdx(parseInt(e.target.value, 10))}>
+                  {years.map((y, i) => <option key={y.from} value={i}>{y.label}</option>)}
+                </select>
+                <a className="ink-btn ink-btn-primary" href={`/app/export/income?from=${years[yearIdx].from}&to=${years[yearIdx].to}`}>Download</a>
+              </div>
             </div>
           </div>
         </div>
@@ -278,6 +312,9 @@ const css = `
 .ink-err { color: var(--electric3); font-size: 13px; margin: 12px 0 0; }
 .im-wrap { display: grid; gap: 20px; max-width: 860px; }
 .im-exports { display: flex; gap: 10px; flex-wrap: wrap; }
+.im-income { margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--border); display: flex; gap: 18px; justify-content: space-between; align-items: center; flex-wrap: wrap; font-size: 13px; }
+.im-income-go { display: flex; gap: 10px; align-items: center; }
+.im-income-go select { background: var(--ink3); border: 1px solid var(--border); border-radius: 8px; color: var(--text); padding: 9px 11px; font-family: 'Syne', sans-serif; font-size: 13px; }
 .im-tabs { display: inline-flex; gap: 2px; padding: 4px; background: var(--ink3); border-radius: 10px; margin-bottom: 14px; }
 .im-tabs button { background: none; border: none; color: var(--muted2); padding: 8px 16px; border-radius: 7px; cursor: pointer; font-family: 'Syne', sans-serif; font-size: 13px; }
 .im-tabs button.on { background: var(--ink2); color: var(--text); box-shadow: 0 2px 8px rgba(0,0,0,0.3); }

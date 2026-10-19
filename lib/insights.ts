@@ -18,6 +18,7 @@ export type InvoiceRow = {
   recurring: string | null; recur_next_date: string | null;
   viewed_at: string | null; reminders_sent: number; sent_at: string | null;
   last_reminder_at?: string | null;
+  disputed_at?: string | null; dispute_note?: string | null;
 };
 export type PaymentRow = {
   invoice_id: string; amount: number; home_amount: number | null; fee: number; paid_on: string;
@@ -180,6 +181,10 @@ export type NextStep = { priority: number; title: string; detail: string; tone: 
 export function nextStep(inv: InvoiceRow, profile: ClientProfile, today: string): NextStep {
   const overdueDays = inv.due_date ? daysBetween(inv.due_date, today) : 0;
   const partial = Number(inv.amount_paid) > 0;
+  if (inv.disputed_at) {
+    return { priority: 5, tone: "friendly", title: "Disputed",
+      detail: "Reminders are paused until you resolve it." + (inv.dispute_note ? " Note: " + inv.dispute_note : "") };
+  }
   // Has Zarbill actually emailed this invoice (or a reminder) to the client?
   const emailed = !!inv.sent_at || !!inv.last_reminder_at;
 

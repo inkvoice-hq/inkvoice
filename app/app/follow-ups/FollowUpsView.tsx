@@ -136,7 +136,7 @@ export function FollowUpsView({ rows, usage }: { rows: FollowUpRow[]; usage: { u
 
         {soon.length > 0 && (
           <details className="fu-soon">
-            <summary>Coming up ({soon.length}): nothing needed yet</summary>
+            <summary>No action needed right now ({soon.length}): not due yet, or paused</summary>
             {soon.map((r) => (
               <div key={r.id} className="fu-soon-row">
                 <span className="fu-num">{r.number}</span> {r.client} · {money(r.balance, r.currency)} · {r.step.detail}

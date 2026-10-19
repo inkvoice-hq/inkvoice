@@ -71,7 +71,22 @@ async function deletePaymentImpl(paymentId: string): Promise<void> {
   await recalcInvoice(supabase, tenantId, pay.invoice_id);
 }
 
+/** Replace an estimated rand amount with what actually landed (after converting). */
+async function updatePaymentHomeImpl(paymentId: string, homeAmount: number, fee: number | null): Promise<void> {
+  const { tenantId } = await requireTenant();
+  const supabase = await createClient();
+  const home = round2(Number(homeAmount));
+  if (!Number.isFinite(home) || home < 0) throw new Error("Enter the amount that landed in your account.");
+  const patch: Record<string, unknown> = { home_amount: home, home_estimated: false };
+  if (fee !== null && Number.isFinite(Number(fee))) patch.fee = round2(Math.max(0, Number(fee)));
+  const { error } = await supabase.from("payments").update(patch).eq("tenant_id", tenantId).eq("id", paymentId);
+  if (error) throw new Error(error.message);
+}
+
 // ---- Actions called from the browser (errors returned, not thrown) ----
+export async function updatePaymentHome(paymentId: string, homeAmount: number, fee: number | null): Promise<Result<void>> {
+  return attempt(() => updatePaymentHomeImpl(paymentId, homeAmount, fee));
+}
 export async function recordPayment(input: PaymentInput): Promise<Result<void>> {
   return attempt(() => recordPaymentImpl(input));
 }

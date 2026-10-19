@@ -21,7 +21,7 @@ function file(name: string, body: string) {
 const lines = (items: any[]) =>
   (Array.isArray(items) ? items : []).map((i) => `${i.desc} x ${i.qty} @ ${Number(i.rate).toFixed(2)}`).join(" | ");
 
-export async function GET(_req: Request, { params }: { params: Promise<{ kind: string }> }) {
+export async function GET(req: Request, { params }: { params: Promise<{ kind: string }> }) {
   const { kind } = await params;
   const { tenantId } = await requireTenant();
   const supabase = await createClient();
@@ -77,6 +77,37 @@ export async function GET(_req: Request, { params }: { params: Promise<{ kind: s
         return [p.paid_on, inv?.number, byId.get(inv?.client_id)?.name, Number(p.amount).toFixed(2), curOf(inv, cur),
           p.home_amount == null ? "" : Number(p.home_amount).toFixed(2), Number(p.fee || 0).toFixed(2), p.method, p.note];
       }),
+    ));
+  }
+
+  if (kind === "income") {
+    // Every payment received in a period, in the account currency: what was
+    // invoiced, what actually landed after fees, and the effective rate.
+    const q = new URL(req.url).searchParams;
+    const iso = (v: string | null) => (v && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : null);
+    const from = iso(q.get("from")) ?? stamp.slice(0, 4) + "-01-01";
+    const to = iso(q.get("to")) ?? stamp;
+    const [{ data: pays }, { data: invs }] = await Promise.all([
+      supabase.from("payments").select("*").eq("tenant_id", tenantId).gte("paid_on", from).lte("paid_on", to).order("paid_on", { ascending: true }),
+      supabase.from("invoices").select("id, number, client_id, currency").eq("tenant_id", tenantId),
+    ]);
+    const invById = new Map((invs ?? []).map((i: any) => [i.id, i]));
+    let totHome = 0, totFees = 0;
+    const rows = (pays ?? []).map((p: any) => {
+      const inv = invById.get(p.invoice_id);
+      const c = curOf(inv, cur);
+      const homeAmt = Number(p.home_amount ?? p.amount);
+      const fee = Number(p.fee || 0);
+      totHome += homeAmt; totFees += fee;
+      const rate = c !== cur && Number(p.amount) > 0 ? ((homeAmt + fee) / Number(p.amount)).toFixed(4) : "";
+      return [p.paid_on, inv?.number, byId.get(inv?.client_id)?.name, c, Number(p.amount).toFixed(2),
+        (homeAmt + fee).toFixed(2), fee.toFixed(2), homeAmt.toFixed(2), rate, p.home_estimated ? "estimate" : "", p.method];
+    });
+    rows.push([], ["TOTAL", "", "", "", "", (totHome + totFees).toFixed(2), totFees.toFixed(2), totHome.toFixed(2), "", "", ""]);
+    return file(`zarbill-income-${from}-to-${to}.csv`, toCSV(
+      ["Date received", "Invoice", "Client", "Invoice currency", "Amount (invoice currency)",
+        `Value before fees (${cur})`, `Fees (${cur})`, `Received (${cur})`, "Effective rate", "Rands estimated?", "Paid via"],
+      rows,
     ));
   }
 

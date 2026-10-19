@@ -256,6 +256,7 @@ export async function runReminders({ dryRun = false } = {}): Promise<ReminderRes
   const [overdueRes, soonRes] = await Promise.all([
     supabase.from("invoices").select(INVOICE_COLS)
       .in("status", ["unpaid", "overdue"])
+      .is("disputed_at", null)
       .not("due_date", "is", null)
       .lt("due_date", today)
       .lt("reminders_sent", REMINDER_STAGES.length)
@@ -264,6 +265,7 @@ export async function runReminders({ dryRun = false } = {}): Promise<ReminderRes
       .limit(500),
     supabase.from("invoices").select(INVOICE_COLS)
       .eq("status", "unpaid")
+      .is("disputed_at", null)
       .eq("due_soon_sent", false)
       .not("sent_at", "is", null)
       .gt("due_date", today)

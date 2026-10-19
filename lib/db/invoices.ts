@@ -236,7 +236,21 @@ async function deleteInvoiceImpl(id: string): Promise<void> {
   if (error) throw new Error(error.message);
 }
 
+/** Mark an invoice as disputed (pauses reminders) or resolve the dispute. */
+async function setDisputedImpl(id: string, disputed: boolean, note: string): Promise<void> {
+  const { tenantId } = await requireTenant();
+  const supabase = await createClient();
+  const { error } = await supabase.from("invoices").update({
+    disputed_at: disputed ? new Date().toISOString() : null,
+    dispute_note: disputed ? (note || "").trim().slice(0, 500) || null : null,
+  }).eq("tenant_id", tenantId).eq("id", id);
+  if (error) throw new Error(error.message);
+}
+
 // ---- Actions called from the browser (errors returned, not thrown) ----
+export async function setDisputed(id: string, disputed: boolean, note: string): Promise<Result<void>> {
+  return attempt(() => setDisputedImpl(id, disputed, note));
+}
 export async function createInvoice_(input: InvoiceFormInput): Promise<Result<Invoice>> {
   return attempt(() => createInvoice_Impl(input));
 }
