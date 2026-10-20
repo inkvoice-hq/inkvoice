@@ -52,7 +52,7 @@ export default async function Landing() {
               rates. Without the financial admin.
             </p>
             <div className="lp-cta">
-              <Link href="/login" className="lp-btn-primary">Start free</Link>
+              <Link href="/login?mode=signup" className="lp-btn-primary">Start free</Link>
               <a href="#pricing" className="lp-btn-ghost">See pricing</a>
             </div>
             <p className="lp-fineprint">
@@ -186,7 +186,7 @@ export default async function Landing() {
                 <li>Quotes, reminders &amp; Pay now links</li>
                 <li>PDF and CSV export</li>
               </ul>
-              <Link href="/login" className="lp-btn-ghost lp-btn-block">Create account</Link>
+              <Link href="/login?mode=signup" className="lp-btn-ghost lp-btn-block">Create account</Link>
             </div>
 
             <div className="lp-plan lp-plan-featured">
@@ -201,7 +201,7 @@ export default async function Landing() {
                 <li>Multi-currency invoicing</li>
                 <li>Custom business branding</li>
               </ul>
-              <Link href="/login" className="lp-btn-primary lp-btn-block">Start free, upgrade later</Link>
+              <Link href="/login?mode=signup" className="lp-btn-primary lp-btn-block">Start free, upgrade later</Link>
             </div>
 
             <div className="lp-plan">
@@ -213,7 +213,7 @@ export default async function Landing() {
                 <li>Team members (coming soon)</li>
                 <li>Priority support</li>
               </ul>
-              <Link href="/login" className="lp-btn-ghost lp-btn-block">Create account</Link>
+              <Link href="/login?mode=signup" className="lp-btn-ghost lp-btn-block">Create account</Link>
             </div>
           </div>
           <p className="lp-fineprint lp-center">
@@ -234,7 +234,7 @@ export default async function Landing() {
 
         <section className="lp-closer">
           <h2>Your next invoice is a minute away.</h2>
-          <Link href="/login" className="lp-btn-primary">Start free</Link>
+          <Link href="/login?mode=signup" className="lp-btn-primary">Start free</Link>
         </section>
 
         <footer className="lp-footer">

@@ -4,6 +4,7 @@ import { useState, useTransition, useEffect } from "react";
 import { readDraft, draftHasContent } from "@/lib/draft";
 import Link from "next/link";
 import { signUp, logIn } from "@/lib/auth/actions";
+import { trackSignup } from "@/lib/track";
 
 export default function LoginPage() {
   const [mode, setMode] = useState<"login" | "signup">("login");
@@ -34,7 +35,11 @@ export default function LoginPage() {
       const result = await action(formData);
       if (result?.error) {
         setError(result.error);
+      } else if (mode === "signup" && result?.redirectTo) {
+        await trackSignup();
+        window.location.assign(result.redirectTo);
       } else if (mode === "signup") {
+        void trackSignup();
         setPendingMsg(fromGenerator
           ? "Almost done! Check your email and tap the confirmation link on this device. Your invoice will be waiting."
           : "Check your email and tap the confirmation link to finish creating your account.");

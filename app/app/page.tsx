@@ -41,6 +41,18 @@ export default async function DashboardPage() {
   const needFollowUp = open.filter((i) => nextStep(i as unknown as InvoiceRow, profileFor(profiles, i.client_id), today).priority >= 60).length;
   const next30 = forecast(rows, currency, today).buckets[0].amount;
 
+  // Getting started: shown until the first payment is recorded.
+  const steps = [
+    { done: clients.length > 0, title: "Add your first client", detail: "Name, email and the currency they pay in.", href: "/app/clients", cta: "Add a client" },
+    { done: invoices.length > 0, title: "Create an invoice", detail: "Or turn a quote into one.", href: "/app/invoices", cta: "New invoice" },
+    { done: invoices.some((i) => !!i.sent_at), title: "Email it from Zarbill", detail: "Reminders and tracking only start once Zarbill has sent it.", href: "/app/invoices", cta: "Send it" },
+    { done: (pays ?? []).length > 0, title: "Record the payment when it lands", detail: "Mark it paid, or upload your Wise, Payoneer, PayPal or bank statement to match it.", href: "/app/reconcile", cta: "Match payments" },
+  ];
+  const doneCount = steps.filter((s) => s.done).length;
+  const nextIdx = steps.findIndex((s) => !s.done);
+  const showSetup = nextIdx >= 0;
+  const isNew = invoices.length === 0;
+
   return (
     <>
       <div style={topbar}>
@@ -49,10 +61,40 @@ export default async function DashboardPage() {
       <div style={{ padding: 32 }}>
         <div style={{ marginBottom: 28 }}>
           <h1 style={{ fontFamily: "'Instrument Serif', serif", fontSize: 34, fontWeight: 400, margin: "0 0 6px" }}>
-            Welcome back
+            {isNew ? "Welcome to Zarbill" : "Welcome back"}
           </h1>
           <p style={{ color: "#9898b8", fontSize: 14, margin: 0 }}>{email}</p>
         </div>
+
+        {showSetup && (
+          <div style={setupCard}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12, flexWrap: "wrap" }}>
+              <div style={{ fontSize: 16, fontWeight: 700 }}>Get set up</div>
+              <div style={statLabel}>{doneCount} of {steps.length} done</div>
+            </div>
+            <div style={{ height: 4, background: "rgba(255,255,255,0.06)", borderRadius: 4, margin: "10px 0 6px" }}>
+              <div style={{ height: 4, width: `${(doneCount / steps.length) * 100}%`, background: "#4fffb0", borderRadius: 4 }} />
+            </div>
+            <ol style={{ listStyle: "none", padding: 0, margin: 0 }}>
+              {steps.map((st, i) => (
+                <li key={st.title} style={{ display: "flex", gap: 12, alignItems: "center", padding: "12px 0", borderTop: i ? "1px solid rgba(255,255,255,0.06)" : "none", opacity: st.done ? 0.55 : 1 }}>
+                  <span style={{ ...stepDot, ...(st.done ? { background: "#4fffb0", color: "#0a0a0d", borderColor: "#4fffb0" } : i === nextIdx ? { borderColor: "#4fffb0", color: "#4fffb0" } : {}) }}>
+                    {st.done ? "✓" : i + 1}
+                  </span>
+                  <span style={{ flex: 1, minWidth: 0 }}>
+                    <span style={{ display: "block", fontSize: 14, fontWeight: 600, textDecoration: st.done ? "line-through" : "none" }}>{st.title}</span>
+                    {!st.done && <span style={{ display: "block", fontSize: 12, color: "#9898b8", marginTop: 2 }}>{st.detail}</span>}
+                  </span>
+                  {i === nextIdx && <Link href={st.href} style={stepBtn}>{st.cta}</Link>}
+                </li>
+              ))}
+            </ol>
+            <div style={{ fontSize: 12, color: "#6e6e88", marginTop: 6 }}>
+              Your main currency is {currency}, used for totals and what landed in your account.{" "}
+              <Link href="/app/settings" style={{ color: "#4fffb0" }}>Change it in Settings</Link>
+            </div>
+          </div>
+        )}
 
         <div style={statRow}>
           <div style={{ ...statCard, borderColor: "rgba(79,255,176,0.25)" }}>
@@ -132,4 +174,15 @@ const statLabel: React.CSSProperties = {
   textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 8,
 };
 const statVal: React.CSSProperties = { fontFamily: "'Instrument Serif', serif", fontSize: 30, lineHeight: 1, color: "#f0f0f8" };
+const setupCard: React.CSSProperties = {
+  background: "#111116", border: "1px solid rgba(79,255,176,0.25)", borderRadius: 16, padding: 20, maxWidth: 760, marginBottom: 14,
+};
+const stepDot: React.CSSProperties = {
+  width: 26, height: 26, borderRadius: 13, border: "1px solid rgba(255,255,255,0.18)", color: "#9898b8",
+  display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, flexShrink: 0,
+};
+const stepBtn: React.CSSProperties = {
+  background: "#4fffb0", color: "#0a0a0d", fontSize: 12, fontWeight: 700, padding: "8px 12px", borderRadius: 8,
+  textDecoration: "none", whiteSpace: "nowrap",
+};
 const statSub: React.CSSProperties = { fontSize: 11, color: "#4fffb0", marginTop: 8 };

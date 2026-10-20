@@ -171,7 +171,7 @@ a.ink-user-chip { text-decoration: none; min-width: 0; }
 }
 .ink-draft-toast a { color: var(--electric); font-weight: 700; white-space: nowrap; text-decoration: none; }
 .ink-draft-toast button { background: none; border: none; color: var(--muted2); font-size: 18px; cursor: pointer; }
-.ink-main { margin-left: 260px; flex: 1; min-height: 100vh; display: flex; flex-direction: column; }
+.ink-main { margin-left: 260px; flex: 1; min-width: 0; min-height: 100vh; display: flex; flex-direction: column; }
 @media (max-width: 900px) {
   .ink-sidebar { width: 68px; }
   .ink-brand-name, .ink-brand-tag, .ink-nav-item span, .ink-nav-label, .ink-user-info { display: none; }

@@ -5,6 +5,8 @@ import { redirect } from "next/navigation";
 
 export interface AuthResult {
   error?: string;
+  /** Set after a successful sign-up that is already logged in (no email confirmation). */
+  redirectTo?: string;
 }
 
 export async function signUp(formData: FormData): Promise<AuthResult> {
@@ -37,7 +39,8 @@ export async function signUp(formData: FormData): Promise<AuthResult> {
       p_email: email,
     });
     if (bootErr) return { error: "Account created, but workspace setup failed: " + bootErr.message };
-    redirect("/app");
+    // The browser navigates, so it can record the sign-up for Google Ads first.
+    return { redirectTo: "/app" };
   }
 
   return {};
