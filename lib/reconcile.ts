@@ -125,7 +125,7 @@ export function allocate(line: StatementLine, inv: OpenInvoice, home: string, cr
     if (inv.currency === home) return { amount, fee: round2(line.fee), home: round2(line.net), estimated: false, note: over };
     if (line.home !== null) return { amount, fee: round2(line.fee * (line.home / Math.max(line.net, 0.01))), home: round2(line.home), estimated: false, note: over };
     return { amount, fee: round2(line.fee * r), home: round2(line.net * r), estimated: true,
-      note: over ?? `Rands estimated at the invoice rate until you convert` };
+      note: over ?? `${home} amount estimated at the invoice rate until you convert` };
   }
 
   if (line.currency === home) {

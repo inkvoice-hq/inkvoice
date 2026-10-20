@@ -106,7 +106,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ kind: st
     rows.push([], ["TOTAL", "", "", "", "", (totHome + totFees).toFixed(2), totFees.toFixed(2), totHome.toFixed(2), "", "", ""]);
     return file(`zarbill-income-${from}-to-${to}.csv`, toCSV(
       ["Date received", "Invoice", "Client", "Invoice currency", "Amount (invoice currency)",
-        `Value before fees (${cur})`, `Fees (${cur})`, `Received (${cur})`, "Effective rate", "Rands estimated?", "Paid via"],
+        `Value before fees (${cur})`, `Fees (${cur})`, `Received (${cur})`, "Effective rate", `${cur} estimated?`, "Paid via"],
       rows,
     ));
   }

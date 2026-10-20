@@ -40,7 +40,7 @@ export default async function Landing() {
 
         <section className="lp-hero">
           <div className="lp-hero-copy">
-            <p className="lp-eyebrow">{isZA ? "For South Africans paid by clients abroad" : "For freelancers paid by clients abroad"}</p>
+            <p className="lp-eyebrow">For freelancers and businesses</p>
             <h1>
               From invoice sent<br />
               <em>to money received.</em>
