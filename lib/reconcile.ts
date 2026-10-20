@@ -6,6 +6,7 @@
 //
 //   invoice number in the reference/description   +55 (number) / +35 (digits)
 //   amount equals the balance (same currency)        +35   (total: +30, net: +30)
+//   up to 5% short (likely a transfer fee)           +25   (bigger shortfall: +8, part-payment)
 //   rands that fit the invoice at its exchange rate  +25 within 3%, +15 within 8%, +5 within 15%
 //   payer name looks like the client                 +20 (email domain: +15)
 //   paid before the invoice existed                  −25
@@ -34,6 +35,10 @@ function tokens(s: string): string[] {
 
 const close = (a: number, b: number, pct = 0.005) => Math.abs(a - b) <= Math.max(0.01, Math.abs(b) * pct);
 
+/** Up to 5% short: almost always a bank/intermediary fee, not a real underpayment. */
+export const SHORT_TOLERANCE = 0.05;
+const isSlightlyShort = (paid: number, due: number) => paid < due && paid >= due * (1 - SHORT_TOLERANCE);
+
 export function scoreMatch(line: StatementLine, inv: OpenInvoice, home: string): Candidate {
   let score = 0;
   const reasons: string[] = [];
@@ -50,6 +55,9 @@ export function scoreMatch(line: StatementLine, inv: OpenInvoice, home: string):
     if (close(line.gross, inv.balance)) { score += 35; reasons.push("Amount equals the balance due"); }
     else if (close(line.gross, inv.total)) { score += 30; reasons.push("Amount equals the invoice total"); }
     else if (close(line.net, inv.balance)) { score += 30; reasons.push("Amount after fees equals the balance"); }
+    else if (isSlightlyShort(line.gross, inv.balance)) {
+      score += 25; reasons.push(`Slightly short (${round2(inv.balance - line.gross)} less), probably a transfer fee`);
+    }
     else if (line.gross < inv.balance) { score += 8; reasons.push("Could be a part-payment"); }
     else if (line.gross > inv.balance * 1.02) { score -= 10; }
   } else if (line.currency === home && inv.currency !== home && Number(inv.fx_rate) > 0) {
@@ -120,12 +128,19 @@ export function allocate(line: StatementLine, inv: OpenInvoice, home: string, cr
   const r = Number(inv.fx_rate) > 0 ? Number(inv.fx_rate) : 1;
 
   if (line.currency === inv.currency) {
-    const amount = round2(Math.min(line.gross, inv.balance));
-    const over = line.gross > inv.balance + 0.01 ? `Paid ${round2(line.gross - inv.balance)} more than the balance` : null;
-    if (inv.currency === home) return { amount, fee: round2(line.fee), home: round2(line.net), estimated: false, note: over };
-    if (line.home !== null) return { amount, fee: round2(line.fee * (line.home / Math.max(line.net, 0.01))), home: round2(line.home), estimated: false, note: over };
-    return { amount, fee: round2(line.fee * r), home: round2(line.net * r), estimated: true,
-      note: over ?? `${home} amount estimated at the invoice rate until you convert` };
+    // Slightly short: credit the full balance and treat the gap as a fee, so
+    // reminders don't chase the client for a bank charge.
+    const short = !close(line.gross, inv.balance) && isSlightlyShort(line.gross, inv.balance)
+      ? round2(inv.balance - line.gross) : 0;
+    const amount = short ? round2(inv.balance) : round2(Math.min(line.gross, inv.balance));
+    const fees = line.fee + short; // in the line currency
+    const note = short
+      ? `${short} ${inv.currency} short, recorded as a fee and marked paid. Lower the credit if the client really underpaid.`
+      : line.gross > inv.balance + 0.01 ? `Paid ${round2(line.gross - inv.balance)} more than the balance` : null;
+    if (inv.currency === home) return { amount, fee: round2(fees), home: round2(line.net), estimated: false, note };
+    if (line.home !== null) return { amount, fee: round2(fees * (line.home / Math.max(line.net, 0.01))), home: round2(line.home), estimated: false, note };
+    return { amount, fee: round2(fees * r), home: round2(line.net * r), estimated: true,
+      note: note ?? `${home} amount estimated at the invoice rate until you convert` };
   }
 
   if (line.currency === home) {
