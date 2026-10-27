@@ -46,7 +46,7 @@ export default async function Landing() {
               <em>to money received.</em>
             </h1>
             <p className="lp-sub">
-              Invoice in dollars, pounds or euros. Zarbill follows up for you, matches the
+              Invoice in rands, dollars, pounds or euros. Zarbill follows up for you, matches the
               payment when it lands in {isZA ? "Wise, Payoneer, PayPal or your FNB or Capitec account" : "Wise, Payoneer, PayPal or your bank"},
               and shows exactly what you earned in {isZA ? "rands" : "your own currency"}, after fees and exchange
               rates. Without the financial admin.
@@ -81,22 +81,21 @@ export default async function Landing() {
               </div>
               <table className="lp-inv-tbl">
                 <tbody>
-                  <tr><td>Brand video — 90 sec</td><td>1</td><td>$1,200.00</td></tr>
-                  <tr><td>Social cutdowns</td><td>4</td><td>$640.00</td></tr>
-                  <tr><td>Colour grade</td><td>1</td><td>$220.00</td></tr>
+                  <tr><td>Brand video — 90 sec</td><td>1</td><td>{isZA ? "R 21 000.00" : "$1,200.00"}</td></tr>
+                  <tr><td>Social cutdowns</td><td>4</td><td>{isZA ? "R 11 200.00" : "$640.00"}</td></tr>
+                  <tr><td>Colour grade</td><td>1</td><td>{isZA ? "R 3 850.00" : "$220.00"}</td></tr>
                 </tbody>
               </table>
               <div className="lp-inv-total">
                 <span>Total due</span>
                 <div className="lp-inv-stamp">PAID</div>
-                <strong>$2,060.00</strong>
+                <strong>{isZA ? "R 36 050.00" : "$2,060.00"}</strong>
               </div>
               <div className="lp-landed">
                 <div className="lp-landed-h">Matched from your {isZA ? "Payoneer" : "Wise"} statement</div>
-                <div className="lp-landed-row"><span>Client paid</span><b>$2,060.00</b></div>
-                <div className="lp-landed-row"><span>{isZA ? "Payoneer" : "Wise"} fee</span><b>{isZA ? "−$41.20" : "−$19.40"}</b></div>
-                <div className="lp-landed-row"><span>Converted at</span><b>{isZA ? "R 17.50 per $" : "€0.92 per $"}</b></div>
-                <div className="lp-landed-row lp-landed-tot"><span>Landed in your account</span><b>{isZA ? "R 35 329.00" : "€1,877.35"}</b></div>
+                <div className="lp-landed-row"><span>Client paid</span><b>{isZA ? "R 36 050.00" : "$2,060.00"}</b></div>
+                <div className="lp-landed-row"><span>{isZA ? "Payoneer" : "Wise"} fee</span><b>{isZA ? "−R 721.00" : "−$19.40"}</b></div>
+                <div className="lp-landed-row lp-landed-tot"><span>Landed in your account</span><b>{isZA ? "R 35 329.00" : "$2,040.60"}</b></div>
               </div>
             </div>
           </div>
