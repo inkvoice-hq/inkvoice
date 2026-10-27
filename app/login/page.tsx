@@ -35,14 +35,13 @@ export default function LoginPage() {
       const result = await action(formData);
       if (result?.error) {
         setError(result.error);
-      } else if (mode === "signup" && result?.redirectTo) {
-        await trackSignup();
-        window.location.assign(result.redirectTo);
       } else if (mode === "signup") {
-        void trackSignup();
-        setPendingMsg(fromGenerator
-          ? "Almost done! Check your email and tap the confirmation link on this device. Your invoice will be waiting."
-          : "Check your email and tap the confirmation link to finish creating your account.");
+        // Both paths land on a URL containing "signup-complete", which is
+        // what the Google Ads sign-up conversion looks for.
+        await trackSignup();
+        window.location.assign(result?.redirectTo
+          ? result.redirectTo + "?signup-complete=1"
+          : "/signup-complete" + (fromGenerator ? "?from=generator" : ""));
       }
     });
   }

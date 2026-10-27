@@ -94,8 +94,9 @@ export default async function Landing() {
               <div className="lp-landed">
                 <div className="lp-landed-h">Matched from your {isZA ? "Payoneer" : "Wise"} statement</div>
                 <div className="lp-landed-row"><span>Client paid</span><b>$2,060.00</b></div>
-                <div className="lp-landed-row"><span>Fees</span><b>{isZA ? "−R 712.40" : "−€19.40"}</b></div>
-                <div className="lp-landed-row lp-landed-tot"><span>Landed in your account</span><b>{isZA ? "R 33 186.20" : "€1,876.30"}</b></div>
+                <div className="lp-landed-row"><span>{isZA ? "Payoneer" : "Wise"} fee</span><b>{isZA ? "−$41.20" : "−$19.40"}</b></div>
+                <div className="lp-landed-row"><span>Converted at</span><b>{isZA ? "R 17.50 per $" : "€0.92 per $"}</b></div>
+                <div className="lp-landed-row lp-landed-tot"><span>Landed in your account</span><b>{isZA ? "R 35 329.00" : "€1,877.35"}</b></div>
               </div>
             </div>
           </div>
