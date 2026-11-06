@@ -4,7 +4,7 @@ export const metadata = { title: "Terms of Service — Zarbill" };
 
 export default function Terms() {
   return (
-    <LegalPage title="Terms of Service" updated="12 August 2026">
+    <LegalPage title="Terms of Service" updated="5 November 2026">
       <p>
         These terms govern your use of Zarbill, invoicing software operated from Cape Town,
         South Africa. By creating an account you agree to them.
@@ -12,13 +12,17 @@ export default function Terms() {
 
       <h2>1. The service</h2>
       <p>
-        Zarbill lets you record clients and services, create and store invoices, and export
-        them as PDFs. We provide the software. You are responsible for the content of the
-        invoices you create and for sending them to your customers.
+        Zarbill lets you record clients and services, create quotes and invoices, email them to
+        your clients, send automatic payment reminders, record payments, match payments from
+        statements you upload, and see fees, exchange rates and reports. We provide the software.
+        You are responsible for the content of your quotes and invoices, for the clients you send
+        them to, and for checking matches and amounts before you confirm them.
       </p>
       <p>
-        Zarbill is not an accounting, tax or legal service. We do not file returns on your
-        behalf or provide financial advice. Please consult a qualified accountant for tax matters.
+        Exchange rates, fee estimates, forecasts and drafted emails are provided to help you and
+        may not be exact. Zarbill is not an accounting, tax or legal service. We do not file
+        returns on your behalf or provide financial advice. Please consult a qualified accountant
+        or tax practitioner for tax matters.
       </p>
 
       <h2>2. Your account</h2>
@@ -31,8 +35,10 @@ export default function Terms() {
 
       <h2>3. Plans and payment</h2>
       <p>
-        A free plan is available with usage limits. Paid plans are billed monthly in advance
-        and renew automatically until cancelled. Current pricing is shown on our{" "}
+        A free plan is available with usage limits, including a monthly invoice allowance. Some
+        features, such as statement matching and fee and exchange-rate tracking, are only
+        available on paid plans. Paid plans are billed monthly in advance in South African rand
+        and renew automatically until cancelled. Current pricing is shown in our{" "}
         <a href="/#pricing">pricing section</a>. Payments are processed by Paystack; we never
         see or store your full card details.
       </p>
@@ -48,14 +54,16 @@ export default function Terms() {
         the database level. See our <a href="/privacy">Privacy Policy</a> for detail.
       </p>
       <p>
-        You may export your invoices as PDFs at any time. If you close your account, contact us
-        and we will delete your data on request.
+        You may export your invoices as PDFs, and your clients, invoices and payments as CSV
+        files, at any time. If you close your account, contact us and we will delete your data
+        on request.
       </p>
 
       <h2>5. Acceptable use</h2>
       <p>You agree not to use Zarbill to:</p>
       <ul>
         <li>Create fraudulent invoices or misrepresent a business.</li>
+        <li>Send invoices, quotes or reminders to people who are not your customers, or send spam.</li>
         <li>Break South African law or the law of your own country.</li>
         <li>Attempt to access another account, or probe or disrupt the service.</li>
         <li>Resell or white-label the service without a written agreement with us.</li>

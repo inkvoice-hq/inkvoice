@@ -7,7 +7,7 @@
 // -----------------------------------------------------------------------------
 import { createClient } from "@/lib/supabase/server";
 import { requireTenant } from "@/lib/db/context";
-import { planLimits, isUnlimited } from "@/lib/plans";
+import { planLimits, isUnlimited, monthStartISO } from "@/lib/plans";
 import { round2, CURRENCY_SYMBOLS } from "@/lib/format";
 import { fxRate } from "@/lib/fx";
 
@@ -83,7 +83,7 @@ export async function importInvoices(rows: ImportInvoiceRow[], opts: { remind?: 
   const res: ImportResult = { created: 0, skipped: 0, limited: 0, messages: [] };
 
   const [{ data: existingInv }, { data: existingClients }] = await Promise.all([
-    supabase.from("invoices").select("number").eq("tenant_id", tenantId),
+    supabase.from("invoices").select("number, created_at").eq("tenant_id", tenantId),
     supabase.from("clients").select("id, name, email").eq("tenant_id", tenantId),
   ]);
   const numbers = new Set((existingInv ?? []).map((i: any) => key(i.number)));
@@ -94,7 +94,8 @@ export async function importInvoices(rows: ImportInvoiceRow[], opts: { remind?: 
   }
 
   const limits = planLimits(tenant?.plan);
-  let invRoom = isUnlimited(limits.maxInvoices) ? Infinity : Math.max(0, limits.maxInvoices - (existingInv ?? []).length);
+  const thisMonth = (existingInv ?? []).filter((i: any) => i.created_at && i.created_at >= monthStartISO()).length;
+  let invRoom = isUnlimited(limits.maxInvoices) ? Infinity : Math.max(0, limits.maxInvoices - thisMonth);
   let clientRoom = isUnlimited(limits.maxClients) ? Infinity : Math.max(0, limits.maxClients - (existingClients ?? []).length);
   let clientsCreated = 0, noClient = 0;
 
@@ -185,6 +186,6 @@ export async function importInvoices(rows: ImportInvoiceRow[], opts: { remind?: 
 
   if (clientsCreated) res.messages.push(`${clientsCreated} new client${clientsCreated === 1 ? "" : "s"} created from the file.`);
   if (noClient) res.messages.push(`${noClient} invoice${noClient === 1 ? "" : "s"} imported without a client (Free plan client limit).`);
-  if (res.limited) res.messages.push(`${res.limited} not imported: the Free plan holds ${limits.maxInvoices} invoices. Upgrade to Pro for unlimited.`);
+  if (res.limited) res.messages.push(`${res.limited} not imported: the Free plan allows ${limits.maxInvoices} new invoices a month. Upgrade to Pro for unlimited.`);
   return res;
 }

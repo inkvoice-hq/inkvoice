@@ -1,6 +1,7 @@
 "use server";
 // lib/db/reconcile.ts — statement matching: suggest matches, then record the
 // ones the user confirms as payments (with fees and landed amounts).
+import { isPaidPlan } from "@/lib/plans";
 import { attempt, type Result } from "@/lib/result";
 import { createClient } from "@/lib/supabase/server";
 import { requireTenant } from "@/lib/db/context";
@@ -20,9 +21,15 @@ export type Prepared = {
   rows: { line: StatementLine; candidates: Candidate[]; chosen: Candidate | null; duplicate: boolean }[];
 };
 
+async function requirePro(supabase: Awaited<ReturnType<typeof createClient>>, tenantId: string) {
+  const { data } = await supabase.from("tenants").select("plan").eq("id", tenantId).maybeSingle();
+  if (!isPaidPlan(data?.plan)) throw new Error("Matching payments is part of Zarbill Pro. Upgrade under Billing & Plan.");
+}
+
 async function prepareImpl(lines: StatementLine[], source: string): Promise<Prepared> {
   const { tenantId } = await requireTenant();
   const supabase = await createClient();
+  await requirePro(supabase, tenantId);
   if (!SOURCES.includes(source)) source = "bank";
   lines = (Array.isArray(lines) ? lines : []).slice(0, 2000);
 
@@ -71,6 +78,7 @@ export type ApplyItem = {
 async function applyImpl(source: string, items: ApplyItem[]): Promise<{ created: number; duplicates: number; errors: string[] }> {
   const { tenantId } = await requireTenant();
   const supabase = await createClient();
+  await requirePro(supabase, tenantId);
   if (!SOURCES.includes(source)) source = "bank";
   const out = { created: 0, duplicates: 0, errors: [] as string[] };
   const touched = new Set<string>();

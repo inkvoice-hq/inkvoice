@@ -2,11 +2,12 @@ export type PlanId = "free" | "pro" | "business";
 
 export interface PlanLimits {
   maxClients: number;
+  /** Invoices created per calendar month (-1 = unlimited). */
   maxInvoices: number;
 }
 
 export const PLAN_LIMITS: Record<PlanId, PlanLimits> = {
-  free:     { maxClients: 3,  maxInvoices: 5 },
+  free:     { maxClients: 3,  maxInvoices: 10 },
   pro:      { maxClients: -1, maxInvoices: -1 },
   business: { maxClients: -1, maxInvoices: -1 },
 };
@@ -36,4 +37,20 @@ export function atLimit(plan: string | null | undefined, kind: "clients" | "invo
   const max = kind === "clients" ? l.maxClients : l.maxInvoices;
   if (isUnlimited(max)) return false;
   return count >= max;
+}
+
+/** ISO timestamp for the start of the current calendar month (UTC), for monthly allowances. */
+export function monthStartISO(now = new Date()): string {
+  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString();
+}
+
+/** Features that need a paid plan. */
+export type ProFeature = "matching" | "fees";
+
+export function isPaidPlan(plan: string | null | undefined): boolean {
+  return plan === "pro" || plan === "business";
+}
+
+export function hasFeature(plan: string | null | undefined, _f: ProFeature): boolean {
+  return isPaidPlan(plan);
 }

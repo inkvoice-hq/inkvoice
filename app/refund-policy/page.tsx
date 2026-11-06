@@ -4,7 +4,7 @@ export const metadata = { title: "Refund & Cancellation Policy — Zarbill" };
 
 export default function RefundPolicy() {
   return (
-    <LegalPage title="Refund & Cancellation Policy" updated="12 August 2026">
+    <LegalPage title="Refund & Cancellation Policy" updated="5 November 2026">
       <p>
         This policy explains how subscription payments, cancellations and refunds work
         for Zarbill. It forms part of our <a href="/terms">Terms of Service</a>.
@@ -13,9 +13,10 @@ export default function RefundPolicy() {
       <h2>Subscriptions and billing</h2>
       <p>
         Zarbill is sold as a monthly subscription. The Pro plan is <strong>R99 per month</strong>
-        {" "}(or <strong>$18 per month</strong> if billed in US dollars). The Business plan is
-        {" "}<strong>R699 per month</strong> (or <strong>$49 per month</strong>). A free plan is
-        available with a limit of 3 clients and 5 invoices, and requires no payment details.
+        {" "}for accounts in South Africa, and <strong>R300 per month</strong> for accounts
+        elsewhere. All subscriptions are charged in South African rand; if your card is in
+        another currency, your bank converts the amount. A free plan is available with up to
+        3 clients and 10 invoices a month, and requires no payment details.
       </p>
       <p>
         Subscriptions renew automatically each month until cancelled. Payments are processed

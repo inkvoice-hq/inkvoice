@@ -4,6 +4,8 @@ import Link from "next/link";
 import { requireTenant } from "@/lib/db/context";
 import { createClient } from "@/lib/supabase/server";
 import { money, todayISO } from "@/lib/format";
+import { ProGate } from "@/components/ProGate";
+import { isPaidPlan } from "@/lib/plans";
 import { clientProfiles, forecast, fxSummary, type InvoiceRow, type PaymentRow } from "@/lib/insights";
 
 export const metadata: Metadata = { title: "Insights" };
@@ -14,12 +16,13 @@ export default async function InsightsPage() {
   const { tenantId } = await requireTenant();
   const supabase = await createClient();
   const [{ data: tenant }, { data: inv }, { data: pays }, { data: clients }] = await Promise.all([
-    supabase.from("tenants").select("currency").eq("id", tenantId).maybeSingle(),
+    supabase.from("tenants").select("currency, plan").eq("id", tenantId).maybeSingle(),
     supabase.from("invoices").select(COLS).eq("tenant_id", tenantId),
     supabase.from("payments").select("invoice_id, amount, home_amount, fee, paid_on").eq("tenant_id", tenantId),
     supabase.from("clients").select("id, name").eq("tenant_id", tenantId),
   ]);
   const home = tenant?.currency || "ZAR";
+  const paid = isPaidPlan(tenant?.plan);
   const today = todayISO();
   const invoices = (inv ?? []) as InvoiceRow[];
   const name = new Map((clients ?? []).map((c: any) => [c.id, c.name as string]));
@@ -114,6 +117,12 @@ export default async function InsightsPage() {
 
             <section>
               <h2 className="in-h">Fees &amp; exchange rates <span>{today.slice(0, 4)} so far</span></h2>
+              {!paid ? (
+                <ProGate title="See what your foreign payments really earned you"
+                  points={["Total fees paid this year, usually tax-deductible", "Exchange gains and losses per payment", "What landed in your account from each currency"]}>
+                  Zarbill compares the rate on each invoice with what actually reached your account, so you know exactly where the money went.
+                </ProGate>
+              ) : (<>
               <div className="in-stats">
                 <Stat label="Fees paid" value={money(fx.fees, home)} note="All payments. Usually tax-deductible." />
                 <Stat label="Exchange gain / loss" value={(fx.gainLoss > 0 ? "+" : "") + money(fx.gainLoss, home)}
@@ -143,6 +152,7 @@ export default async function InsightsPage() {
               ) : (
                 <p className="in-sub">When you record a payment on a foreign-currency invoice, enter what landed in your account and any fees. It shows up here.</p>
               )}
+              </>)}
               <p className="in-fine">
                 Exchange rates: <a href="https://www.exchangerate-api.com" target="_blank" rel="noopener noreferrer">Rates By Exchange Rate API</a>, updated daily.
               </p>

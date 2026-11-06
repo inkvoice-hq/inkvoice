@@ -11,11 +11,12 @@ export default async function Landing() {
   const h = await headers();
   const country = h.get("x-vercel-ip-country") || "ZA";
   const isZA = country === "ZA";
-  const proPrice = isZA ? "R99" : "$18";
-  const bizPrice = isZA ? "R699" : "$49";
+  // Paystack settles in rand, so accounts outside South Africa are charged R300.
+  const proPrice = isZA ? "R99" : "R300";
   const freePrice = isZA ? "R0" : "$0";
-  const altPro = "Billed monthly. Cancel anytime.";
-  const altBiz = "Billed monthly. Cancel anytime.";
+  const altPro = isZA
+    ? "Billed monthly. Cancel anytime."
+    : "About $17 a month. Charged in South African rand; your bank converts it.";
 
   return (
     <>
@@ -56,7 +57,7 @@ export default async function Landing() {
               <a href="#pricing" className="lp-btn-ghost">See pricing</a>
             </div>
             <p className="lp-fineprint">
-              Free plan includes 3 clients and 5 invoices. No card required.
+              Free plan includes 10 invoices a month. No card required.
             </p>
           </div>
 
@@ -174,46 +175,37 @@ export default async function Landing() {
         <section className="lp-section" id="pricing">
           <h2 className="lp-h2">Pricing</h2>
           <p className="lp-lede">
-            Start free. Upgrade when your business outgrows the limits.
+            Start free. Upgrade when you want Zarbill to do the matching and the maths for you.
           </p>
           <div className="lp-plans">
             <div className="lp-plan">
               <div className="lp-plan-name">Free</div>
               <div className="lp-plan-price">{freePrice}<span>/month</span></div>
+              <p className="lp-plan-alt">For getting started.</p>
               <ul>
-                <li>3 clients</li>
-                <li>5 invoices</li>
-                <li>Quotes, reminders &amp; Pay now links</li>
+                <li>10 invoices a month</li>
+                <li>Up to 3 clients</li>
+                <li>Quotes, recurring invoices and automatic reminders</li>
+                <li>Pay now links and part-payment tracking</li>
+                <li>Income report for your tax practitioner</li>
                 <li>PDF and CSV export</li>
               </ul>
-              <Link href="/login?mode=signup" className="lp-btn-ghost lp-btn-block">Create account</Link>
+              <Link href="/login?mode=signup" className="lp-btn-ghost lp-btn-block">Create free account</Link>
             </div>
 
             <div className="lp-plan lp-plan-featured">
-              <div className="lp-plan-tag">Most popular</div>
+              <div className="lp-plan-tag">For getting paid from abroad</div>
               <div className="lp-plan-name">Pro</div>
               <div className="lp-plan-price">{proPrice}<span>/month</span></div>
               <p className="lp-plan-alt">{altPro}</p>
               <ul>
-                <li>Unlimited clients</li>
-                <li>Unlimited invoices</li>
-                <li>Unlimited recurring invoices</li>
-                <li>Multi-currency invoicing</li>
-                <li>Custom business branding</li>
+                <li><strong>Match payments</strong> from Wise, Payoneer, PayPal, FNB, Capitec and other bank statements</li>
+                <li><strong>Fees and exchange rates tracked</strong>: see exactly what landed in your account</li>
+                <li>Unlimited invoices and clients</li>
+                <li>200 drafted follow-up emails a month (5 on Free)</li>
+                <li>Everything in Free</li>
               </ul>
               <Link href="/login?mode=signup" className="lp-btn-primary lp-btn-block">Start free, upgrade later</Link>
-            </div>
-
-            <div className="lp-plan">
-              <div className="lp-plan-name">Business</div>
-              <div className="lp-plan-price">{bizPrice}<span>/month</span></div>
-              <p className="lp-plan-alt">{altBiz}</p>
-              <ul>
-                <li>Everything in Pro</li>
-                <li>Team members (coming soon)</li>
-                <li>Priority support</li>
-              </ul>
-              <Link href="/login?mode=signup" className="lp-btn-ghost lp-btn-block">Create account</Link>
             </div>
           </div>
           <p className="lp-fineprint lp-center">
@@ -397,7 +389,7 @@ a { color: inherit; text-decoration: none; }
 .lp-feature { background: var(--ink2); border: 1px solid var(--line); border-radius: 14px; padding: 24px; }
 .lp-feature h3 { font-size: 15px; margin: 0 0 9px; letter-spacing: -0.2px; }
 .lp-feature p { color: var(--muted); font-size: 13.5px; line-height: 1.7; margin: 0; }
-.lp-plans { display: grid; grid-template-columns: repeat(3,1fr); gap: 18px; align-items: start; }
+.lp-plans { display: grid; grid-template-columns: repeat(2,1fr); gap: 18px; align-items: start; max-width: 820px; margin: 0 auto; }
 .lp-plan { background: var(--ink2); border: 1px solid var(--line); border-radius: 16px; padding: 28px; position: relative; }
 .lp-plan-featured { border-color: rgba(79,255,176,0.34); background: linear-gradient(180deg, rgba(79,255,176,0.05), var(--ink2) 55%); }
 .lp-plan-tag {

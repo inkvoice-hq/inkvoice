@@ -48,7 +48,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             <NavLink href="/app" exact icon="grid">Dashboard</NavLink>
             <NavLink href="/app/invoices" icon="file">Invoices</NavLink>
             <NavLink href="/app/quotes" icon="quote">Quotes</NavLink>
-            <NavLink href="/app/reconcile" icon="bank">Match payments</NavLink>
+            <NavLink href="/app/reconcile" icon="bank">Match payments{plan === "FREE" && <span className="ink-pro-tag">PRO</span>}</NavLink>
             <NavLink href="/app/follow-ups" icon="bell">Follow-ups</NavLink>
             <NavLink href="/app/insights" icon="chart">Insights</NavLink>
             <NavLink href="/app/clients" icon="users">Clients</NavLink>
@@ -162,6 +162,7 @@ a.ink-user-chip { text-decoration: none; min-width: 0; }
 }
 .ink-user-info { flex: 1; min-width: 0; }
 .ink-user-name { font-size: 13px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ink-pro-tag { margin-left: 8px; font-size: 9px; font-weight: 700; letter-spacing: 1px; color: #0a0a0d; background: var(--electric); border-radius: 4px; padding: 2px 5px; font-family: 'JetBrains Mono', monospace; vertical-align: middle; }
 .ink-user-plan { font-size: 10px; color: var(--electric); font-family: 'JetBrains Mono', monospace; }
 .ink-draft-toast {
   position: fixed; right: 20px; bottom: 20px; z-index: 300; max-width: 460px;

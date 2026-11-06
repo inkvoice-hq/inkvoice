@@ -15,7 +15,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { deliverInvoiceEmail } from "@/lib/email/invoice-core";
 import { addInterval, daysBetween, addDaysISO } from "@/lib/format";
-import { atLimit } from "@/lib/plans";
+import { atLimit, monthStartISO } from "@/lib/plans";
 import { fxRate } from "@/lib/fx";
 
 type Log = { invoice: string; detail: string };
@@ -105,9 +105,9 @@ export async function runRecurring({ dryRun = false } = {}): Promise<JobResult> 
     const following = nextAfter(anchor, t.recurring, today > issue ? today : issue);
 
     const { data: tenant } = await admin.from("tenants").select("plan, payment_terms, currency").eq("id", t.tenant_id).maybeSingle();
-    const { count } = await admin.from("invoices").select("id", { count: "exact", head: true }).eq("tenant_id", t.tenant_id);
+    const { count } = await admin.from("invoices").select("id", { count: "exact", head: true }).eq("tenant_id", t.tenant_id).gte("created_at", monthStartISO());
     if (atLimit(tenant?.plan, "invoices", count ?? 0)) {
-      r.skipped.push({ invoice: t.number, detail: "free plan invoice limit reached" });
+      r.skipped.push({ invoice: t.number, detail: "free plan monthly invoice limit reached" });
       continue;
     }
 

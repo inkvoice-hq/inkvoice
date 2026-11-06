@@ -2,7 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { requireTenant } from "@/lib/db/context";
-import { atLimit } from "@/lib/plans";
+import { atLimit, monthStartISO } from "@/lib/plans";
 
 export async function assertCanCreate(kind: "clients" | "invoices"): Promise<void> {
   const { tenantId } = await requireTenant();
@@ -13,14 +13,17 @@ export async function assertCanCreate(kind: "clients" | "invoices"): Promise<voi
 
   const plan = tenant?.plan ?? "free";
 
-  const { count } = await supabase
+  // Clients: total. Invoices: created this calendar month.
+  let q = supabase
     .from(kind)
     .select("id", { count: "exact", head: true })
     .eq("tenant_id", tenantId);
+  if (kind === "invoices") q = q.gte("created_at", monthStartISO());
+  const { count } = await q;
 
   if (atLimit(plan, kind, count ?? 0)) {
-    throw new Error(
-      `You've reached the Free plan limit for ${kind}. Upgrade to Pro for unlimited ${kind}.`
-    );
+    throw new Error(kind === "invoices"
+      ? "You've used this month's 10 free invoices. Upgrade to Pro for unlimited invoices, or wait until the 1st."
+      : "You've reached the Free plan limit of 3 clients. Upgrade to Pro for unlimited clients.");
   }
 }

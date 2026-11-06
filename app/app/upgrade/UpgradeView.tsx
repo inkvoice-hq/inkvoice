@@ -29,11 +29,8 @@ export function UpgradeView({
     } finally { setBusy(null); }
   }
 
-  const price = (p: "pro" | "business") =>
-    currency === "ZAR"
-      ? (p === "pro" ? "R99" : "R699")
-      : (p === "pro" ? "$18" : "$49");
-
+  // Paystack settles in rand, so everyone is charged in ZAR.
+  const price = isZA ? "R99" : "R300";
   return (
     <>
       <style>{css}</style>
@@ -44,7 +41,7 @@ export function UpgradeView({
           <div className="ink-current">
             <div className="ink-badge-pro">{plan.toUpperCase()} PLAN — ACTIVE</div>
             <h2>You&apos;re all set.</h2>
-            <p>Unlimited clients and invoices, plus everything Zarbill offers. Thank you for being a customer.</p>
+            <p>Unlimited clients and invoices, statement matching, and fee and exchange-rate tracking. Thank you for being a customer.</p>
           </div>
         ) : (
           <>
@@ -52,7 +49,7 @@ export function UpgradeView({
               <h2>You&apos;re on the Free plan</h2>
               <div className="ink-bars">
                 <Usage label="Clients" used={clientCount} max={free.maxClients} />
-                <Usage label="Invoices" used={invoiceCount} max={free.maxInvoices} />
+                <Usage label="Invoices this month" used={invoiceCount} max={free.maxInvoices} />
               </div>
             </div>
 
@@ -60,38 +57,25 @@ export function UpgradeView({
             <div className="ink-plans">
               <div className="ink-plan">
                 <div className="ink-plan-name">Pro</div>
-                <p className="ink-plan-sub">For freelancers and creators</p>
-                <div className="ink-plan-price">{price("pro")}<span>/month</span></div>
+                <p className="ink-plan-sub">For freelancers paid by clients at home and abroad</p>
+                <div className="ink-plan-price">{price}<span>/month</span></div>
+                {!isZA && <p className="ink-plan-sub">About $17 a month, depending on your bank&apos;s rate</p>}
                 <ul>
-                  <li>Unlimited invoices</li>
-                  <li>Unlimited clients</li>
-                  <li>Unlimited services</li>
-                  <li>Custom branding &amp; multi-currency</li>
-                  <li>PDF export</li>
+                  <li>Unlimited invoices and clients</li>
+                  <li>Match payments from Wise, Payoneer, PayPal and bank statements</li>
+                  <li>Fees and exchange rates tracked: see what actually landed</li>
+                  <li>200 drafted follow-up emails a month (5 on Free)</li>
+                  <li>Everything in Free</li>
                 </ul>
                 <button className="ink-btn ink-btn-primary" onClick={() => checkout("pro")} disabled={busy !== null}>
                   {busy === "pro" ? "Starting..." : "Upgrade to Pro"}
-                </button>
-              </div>
-
-              <div className="ink-plan ink-plan-alt">
-                <div className="ink-plan-name">Business</div>
-                <p className="ink-plan-sub">For small agencies</p>
-                <div className="ink-plan-price">{price("business")}<span>/month</span></div>
-                <ul>
-                  <li>Everything in Pro</li>
-                  <li>Team members (coming soon)</li>
-                  <li>Priority support</li>
-                </ul>
-                <button className="ink-btn ink-btn-violet" onClick={() => checkout("business")} disabled={busy !== null}>
-                  {busy === "business" ? "Starting..." : "Upgrade to Business"}
                 </button>
               </div>
             </div>
 
             {err && <p className="ink-err">{err}</p>}
             <p className="ink-note">
-              {isZA ? "Payments are processed securely by Paystack. Cards and EFT supported. " : "Payments are processed securely by Paystack. Your card is charged in ZAR (R300/month for Pro, R799/month for Business) and your bank converts it to your currency. "}
+              {isZA ? "Payments are processed securely by Paystack. Cards and EFT supported. " : "Payments are processed securely by Paystack. Your card is charged in South African rand (R300 a month) and your bank converts it to your currency. "}
               Your plan activates automatically once payment is confirmed.
             </p>
           </>
@@ -143,7 +127,7 @@ const css = `
 .ink-plan-price span { font-size: 15px; color: var(--muted2); font-family: 'Syne', sans-serif; }
 .ink-plan ul { list-style: none; padding: 0; margin: 0 0 22px; }
 .ink-plan li { font-size: 13px; color: var(--muted2); padding: 5px 0; }
-.ink-plan li::before { content: "check "; color: var(--electric); font-weight: 700; }
+.ink-plan li::before { content: "✓  "; color: var(--electric); font-weight: 700; }
 .ink-current { background: linear-gradient(135deg, rgba(79,255,176,0.06), rgba(0,212,255,0.06)); border: 1px solid rgba(79,255,176,0.2); border-radius: 16px; padding: 32px; }
 .ink-badge-pro { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--electric); letter-spacing: 2px; margin-bottom: 10px; }
 .ink-current h2 { font-family: 'Instrument Serif', serif; font-size: 30px; font-weight: 400; margin: 0 0 8px; }
