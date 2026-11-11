@@ -3,6 +3,8 @@ import { requireTenant } from "@/lib/db/context";
 import { createClient } from "@/lib/supabase/server";
 import { ReconcileView } from "./ReconcileView";
 import { ProGate } from "@/components/ProGate";
+import { MatchDemo } from "@/components/MatchDemo";
+import { getRegion } from "@/lib/region";
 import { isPaidPlan } from "@/lib/plans";
 
 export const metadata: Metadata = { title: "Match payments" };
@@ -12,6 +14,7 @@ export default async function ReconcilePage() {
   const supabase = await createClient();
   const { data: t } = await supabase.from("tenants").select("currency, plan").eq("id", tenantId).maybeSingle();
   if (!isPaidPlan(t?.plan)) {
+    const { isZA } = await getRegion();
     return (
       <>
         <div style={{ position: "sticky", top: 0, zIndex: 40, background: "rgba(10,10,13,0.85)", borderBottom: "1px solid var(--border)", padding: "0 32px", height: 60, display: "flex", alignItems: "center" }}>
@@ -28,6 +31,8 @@ export default async function ReconcilePage() {
             Stop cross-checking statements against invoices by hand. Zarbill reads your statement,
             finds the client payments and marks the right invoices paid, after you confirm.
           </ProGate>
+          <h3 style={{ fontSize: 15, fontWeight: 700, margin: "28px 0 12px" }}>See how it works</h3>
+          <div style={{ maxWidth: 760 }}><MatchDemo isZA={isZA} /></div>
         </div>
       </>
     );

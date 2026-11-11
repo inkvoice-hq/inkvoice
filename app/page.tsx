@@ -1,5 +1,6 @@
 import { headers } from "next/headers";
 import Link from "next/link";
+import { MatchDemo } from "@/components/MatchDemo";
 
 export const metadata = {
   title: "Zarbill — Free invoicing. From invoice sent to money received",
@@ -134,6 +135,15 @@ export default async function Landing() {
           </ol>
         </section>
 
+        <section className="lp-section lp-demo" id="matching">
+          <h2 className="lp-h2">Watch a statement match itself <span className="lp-pro">Pro</span></h2>
+          <p className="lp-lede">
+            No more cross-checking your {isZA ? "Payoneer" : "Wise"} statement against your invoices. Upload it,
+            confirm the matches, and see what actually landed.
+          </p>
+          <MatchDemo isZA={isZA} />
+        </section>
+
         <section className="lp-section lp-section-alt">
           <h2 className="lp-h2">Built for how you actually work</h2>
           <div className="lp-grid">
@@ -261,6 +271,9 @@ function Feature({ title, children }: { title: string; children: React.ReactNode
 }
 
 const css = `
+.lp-demo { padding-top: 20px; }
+.lp-demo .lp-lede { max-width: 44em; margin-bottom: 28px; line-height: 1.7; }
+.lp-demo .md { margin: 0 auto; }
 .lp-pro { display: inline-block; margin-left: 6px; font-family: 'JetBrains Mono', monospace; font-size: 9px; font-weight: 500; letter-spacing: 1px; text-transform: uppercase; color: #0a0a0d; background: #4fffb0; border-radius: 4px; padding: 2px 6px; vertical-align: middle; }
 :root {
   --ink: #0a0a0d; --ink2: #111116; --ink3: #18181f;
