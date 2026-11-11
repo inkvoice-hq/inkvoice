@@ -6,12 +6,12 @@ import { getRegion } from "@/lib/region";
 export const metadata: Metadata = {
   title: "Free invoice generator — no signup required",
   description:
-    "Create and download a professional tax invoice in under a minute. No account, no email, no watermark. Works in dollars, pounds, euros and more.",
+    "Create and download a professional tax invoice in under a minute. No account and no email needed. Works in rands, dollars, pounds, euros and more.",
   alternates: { canonical: "https://zarbill.com/free-invoice-generator" },
   openGraph: {
     title: "Free invoice generator — no signup required",
     description:
-      "Make a professional tax invoice in under a minute. No account needed, no watermark.",
+      "Make a professional tax invoice in under a minute. No account needed.",
     url: "https://zarbill.com/free-invoice-generator",
   },
 };
@@ -29,7 +29,7 @@ export default async function Page() {
         <h1>Make an invoice, right now</h1>
         <p className="gen-sub">
           Fill in the form and your invoice builds itself alongside. Download it as a
-          PDF when you are happy. No account, no email address, no watermark.
+          PDF when you are happy. No account and no email address needed.
         </p>
       </header>
 

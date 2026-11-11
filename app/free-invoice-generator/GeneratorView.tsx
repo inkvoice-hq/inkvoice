@@ -221,6 +221,9 @@ export function GeneratorView({ defaultCurrency = "USD" }: { defaultCurrency?: s
               {notes.split("\n").map((l, i) => <span key={i}>{l}<br /></span>)}
             </div>
           )}
+          <div className="gp-mark">
+            Created with <a href="https://zarbill.com/?ref=generator-pdf" target="_blank" rel="noopener">Zarbill</a> · free invoicing for freelancers
+          </div>
         </div>
       </div>
     </div>
