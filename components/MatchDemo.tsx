@@ -105,8 +105,13 @@ export function MatchDemo({ isZA = true }: { isZA?: boolean }) {
             <div className="md-sum">
               <div><span>Clients paid</span><b>$3,690.00</b></div>
               <div><span>{provider} fees</span><b>−$73.80</b></div>
-              {isZA && <div><span>Converted at</span><b>R 17.50 per $</b></div>}
-              <div className="md-sum-tot"><span>Landed in your account</span><b>{landed}</b></div>
+              {isZA ? (<>
+                <div><span>You received</span><b>$3,616.20</b></div>
+                <div><span>Converted at</span><b>R 17.50 per $</b></div>
+                <div className="md-sum-tot"><span>Landed in your bank</span><b>{landed}</b></div>
+              </>) : (
+                <div className="md-sum-tot"><span>Landed in your account</span><b>{landed}</b></div>
+              )}
             </div>
             <p className="md-done-p">
               Reminders stop for those invoices, the fees go into your tax-year report, and
@@ -169,7 +174,7 @@ const css = `
 @keyframes md-pop { from { transform: scale(0); } to { transform: scale(1); } }
 .md-sum { margin-top: 18px; background: rgba(79,255,176,0.05); border: 1px solid rgba(79,255,176,0.2); border-radius: 12px; padding: 14px 16px; max-width: 460px; }
 .md-sum div { display: flex; justify-content: space-between; gap: 12px; font-size: 13.5px; color: #b8b8d0; padding: 4px 0; opacity: 0; animation: md-in 0.4s ease both; }
-.md-sum div:nth-child(1) { animation-delay: 0.3s; } .md-sum div:nth-child(2) { animation-delay: 0.55s; } .md-sum div:nth-child(3) { animation-delay: 0.8s; } .md-sum div:nth-child(4) { animation-delay: 1.05s; }
+.md-sum div:nth-child(1) { animation-delay: 0.3s; } .md-sum div:nth-child(2) { animation-delay: 0.55s; } .md-sum div:nth-child(3) { animation-delay: 0.8s; } .md-sum div:nth-child(4) { animation-delay: 1.05s; } .md-sum div:nth-child(5) { animation-delay: 1.3s; }
 .md-sum b { font-family: 'JetBrains Mono', monospace; font-weight: 500; color: #f0f0f8; white-space: nowrap; }
 .md-sum .md-sum-tot { border-top: 1px solid rgba(79,255,176,0.2); margin-top: 6px; padding-top: 10px; font-size: 15px; color: #f0f0f8; }
 .md-sum .md-sum-tot b { color: #4fffb0; font-weight: 700; }
