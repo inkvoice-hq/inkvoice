@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { PLAN_LIMITS } from "@/lib/plans";
 
 export function UpgradeView({
   plan, clientCount, invoiceCount, isZA = true,
@@ -11,7 +10,6 @@ export function UpgradeView({
   const [err, setErr] = useState<string | null>(null);
 
   const isPaid = plan === "pro" || plan === "business";
-  const free = PLAN_LIMITS.free;
 
   async function checkout(target: "pro" | "business") {
     setBusy(target); setErr(null);
@@ -41,31 +39,37 @@ export function UpgradeView({
           <div className="ink-current">
             <div className="ink-badge-pro">{plan.toUpperCase()} PLAN — ACTIVE</div>
             <h2>You&apos;re all set.</h2>
-            <p>Unlimited clients and invoices, statement matching, and fee and exchange-rate tracking. Thank you for being a customer.</p>
+            <p>Statement matching and fee and exchange-rate tracking are switched on, alongside unlimited invoicing. Thank you for being a customer.</p>
           </div>
         ) : (
           <>
             <div className="ink-usage">
               <h2>You&apos;re on the Free plan</h2>
-              <div className="ink-bars">
-                <Usage label="Clients" used={clientCount} max={free.maxClients} />
-                <Usage label="Invoices this month" used={invoiceCount} max={free.maxInvoices} />
-              </div>
+              <p className="ink-free-line">
+                Invoicing is free, with no limits: unlimited invoices, quotes and clients, plus
+                reminders, recurring invoices and Pay now links. So far you have {clientCount}{" "}
+                {clientCount === 1 ? "client" : "clients"} and {invoiceCount}{" "}
+                {invoiceCount === 1 ? "invoice" : "invoices"}.
+              </p>
+              <p className="ink-free-line">
+                Pro adds the money side: it matches the payments on your statements to your
+                invoices and tracks fees and exchange rates, so you know what actually landed.
+              </p>
             </div>
 
 
             <div className="ink-plans">
               <div className="ink-plan">
                 <div className="ink-plan-name">Pro</div>
-                <p className="ink-plan-sub">For freelancers paid by clients at home and abroad</p>
+                <p className="ink-plan-sub">Know exactly what you were paid, without the admin</p>
                 <div className="ink-plan-price">{price}<span>/month</span></div>
                 {!isZA && <p className="ink-plan-sub">About $17 a month, depending on your bank&apos;s rate</p>}
                 <ul>
-                  <li>Unlimited invoices and clients</li>
                   <li>Match payments from Wise, Payoneer, PayPal and bank statements</li>
+                  <li>Invoices marked paid for you, after you confirm each match</li>
                   <li>Fees and exchange rates tracked: see what actually landed</li>
                   <li>200 drafted follow-up emails a month (5 on Free)</li>
-                  <li>Everything in Free</li>
+                  <li>Everything in Free, including unlimited invoicing</li>
                 </ul>
                 <button className="ink-btn ink-btn-primary" onClick={() => checkout("pro")} disabled={busy !== null}>
                   {busy === "pro" ? "Starting..." : "Upgrade to Pro"}
@@ -85,21 +89,8 @@ export function UpgradeView({
   );
 }
 
-function Usage({ label, used, max }: { label: string; used: number; max: number }) {
-  const pct = max < 0 ? 0 : Math.min(100, Math.round((used / max) * 100));
-  const full = max >= 0 && used >= max;
-  return (
-    <div className="ink-usage-item">
-      <div className="ink-usage-top">
-        <span>{label}</span>
-        <span className={full ? "ink-full" : ""}>{used} / {max < 0 ? "unlimited" : max}</span>
-      </div>
-      <div className="ink-bar"><div className="ink-bar-fill" style={{ width: pct + "%", background: full ? "var(--electric3)" : "var(--electric)" }} /></div>
-    </div>
-  );
-}
-
 const css = `
+.ink-free-line { font-size: 14px; line-height: 1.6; color: var(--muted2); margin: 10px 0 0; max-width: 640px; }
 .ink-topbar { position: sticky; top: 0; z-index: 40; background: rgba(10,10,13,0.85); backdrop-filter: blur(20px); border-bottom: 1px solid var(--border); padding: 0 32px; height: 60px; display: flex; align-items: center; }
 .ink-tb-title { font-size: 18px; font-weight: 700; letter-spacing: -0.3px; }
 .ink-page { padding: 32px; max-width: 860px; }

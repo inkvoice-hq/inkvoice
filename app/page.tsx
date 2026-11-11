@@ -2,9 +2,9 @@ import { headers } from "next/headers";
 import Link from "next/link";
 
 export const metadata = {
-  title: "Zarbill — From invoice sent to money received",
+  title: "Zarbill — Free invoicing. From invoice sent to money received",
   description:
-    "Invoicing for freelancers paid by clients abroad. Bill in dollars, pounds or euros, get paid, match the payment from Wise, Payoneer, PayPal or your bank, and see exactly what you earned after fees and exchange rates.",
+    "Free, unlimited invoices and quotes for freelancers and small businesses. Bill in rands, dollars, pounds or euros and get paid. Upgrade to match payments from Wise, Payoneer, PayPal or your bank and see exactly what you earned after fees and exchange rates.",
 };
 
 export default async function Landing() {
@@ -41,23 +41,24 @@ export default async function Landing() {
 
         <section className="lp-hero">
           <div className="lp-hero-copy">
-            <p className="lp-eyebrow">For freelancers and businesses</p>
+            <p className="lp-eyebrow">Free invoicing for freelancers and businesses</p>
             <h1>
               From invoice sent<br />
               <em>to money received.</em>
             </h1>
             <p className="lp-sub">
-              Invoice in rands, dollars, pounds or euros. Zarbill follows up for you, matches the
-              payment when it lands in {isZA ? "Wise, Payoneer, PayPal or your FNB or Capitec account" : "Wise, Payoneer, PayPal or your bank"},
-              and shows exactly what you earned in {isZA ? "rands" : "your own currency"}, after fees and exchange
-              rates. Without the financial admin.
+              Unlimited invoices and quotes, free. Bill in rands, dollars, pounds or euros and
+              Zarbill follows up for you. With Pro, it also matches the payment when it lands in{" "}
+              {isZA ? "Wise, Payoneer, PayPal or your FNB or Capitec account" : "Wise, Payoneer, PayPal or your bank"}{" "}
+              and shows exactly what you earned in {isZA ? "rands" : "your own currency"}, after fees and
+              exchange rates. Without the financial admin.
             </p>
             <div className="lp-cta">
               <Link href="/login?mode=signup" className="lp-btn-primary">Start free</Link>
               <a href="#pricing" className="lp-btn-ghost">See pricing</a>
             </div>
             <p className="lp-fineprint">
-              Free plan includes 10 invoices a month. No card required.
+              Invoicing is free, with no limits. No card required.
             </p>
           </div>
 
@@ -124,7 +125,7 @@ export default async function Landing() {
             </li>
             <li>
               <span className="lp-step-n">03</span>
-              <h3>Match it, see what you earned</h3>
+              <h3>Match it, see what you earned <span className="lp-pro">Pro</span></h3>
               <p>
                 Upload your {isZA ? "Payoneer, Wise, PayPal or bank" : "Wise, Payoneer, PayPal or bank"} statement. Zarbill matches each payment to its
                 invoice and records the fees and the {isZA ? "rands" : "money"} that actually landed. You just confirm.
@@ -153,8 +154,8 @@ export default async function Landing() {
               when you need to.
             </Feature>
             <Feature title="Know what's coming in">
-              A 30/60/90-day cash forecast based on how each client actually pays, plus what fees
-              and exchange rates really cost you.
+              A 30/60/90-day cash forecast based on how each client actually pays. On Pro, also
+              see what fees and exchange rates really cost you.
             </Feature>
             <Feature title="Quotes that become invoices">
               Send a quote, your client accepts it online, and it turns into an invoice in one
@@ -173,19 +174,19 @@ export default async function Landing() {
         </section>
 
         <section className="lp-section" id="pricing">
-          <h2 className="lp-h2">Pricing</h2>
+          <h2 className="lp-h2">Invoicing is free. Pay only for the money side.</h2>
           <p className="lp-lede">
-            Start free. Upgrade when you want Zarbill to do the matching and the maths for you.
+            Send as many invoices and quotes as you like, to as many clients as you like, for free. Upgrade when you want Zarbill to match your payments and do the maths for you.
           </p>
           <div className="lp-plans">
             <div className="lp-plan">
               <div className="lp-plan-name">Free</div>
               <div className="lp-plan-price">{freePrice}<span>/month</span></div>
-              <p className="lp-plan-alt">For getting started.</p>
+              <p className="lp-plan-alt">Free for good. No card, no trial period.</p>
               <ul>
-                <li>10 invoices a month</li>
-                <li>Up to 3 clients</li>
-                <li>Quotes, recurring invoices and automatic reminders</li>
+                <li><strong>Unlimited invoices and quotes</strong></li>
+                <li>Unlimited clients, in any currency</li>
+                <li>Recurring invoices and automatic reminders</li>
                 <li>Pay now links and part-payment tracking</li>
                 <li>Income report for your tax practitioner</li>
                 <li>PDF and CSV export</li>
@@ -194,14 +195,14 @@ export default async function Landing() {
             </div>
 
             <div className="lp-plan lp-plan-featured">
-              <div className="lp-plan-tag">For getting paid from abroad</div>
+              <div className="lp-plan-tag">Matching and money tracking</div>
               <div className="lp-plan-name">Pro</div>
               <div className="lp-plan-price">{proPrice}<span>/month</span></div>
               <p className="lp-plan-alt">{altPro}</p>
               <ul>
                 <li><strong>Match payments</strong> from Wise, Payoneer, PayPal, FNB, Capitec and other bank statements</li>
+                <li><strong>Invoices marked paid for you</strong>, after you confirm each match</li>
                 <li><strong>Fees and exchange rates tracked</strong>: see exactly what landed in your account</li>
-                <li>Unlimited invoices and clients</li>
                 <li>200 drafted follow-up emails a month (5 on Free)</li>
                 <li>Everything in Free</li>
               </ul>
@@ -225,7 +226,7 @@ export default async function Landing() {
         </section>
 
         <section className="lp-closer">
-          <h2>Your next invoice is a minute away.</h2>
+          <h2>Your next invoice is a minute away, and it&apos;s free.</h2>
           <Link href="/login?mode=signup" className="lp-btn-primary">Start free</Link>
         </section>
 
@@ -260,6 +261,7 @@ function Feature({ title, children }: { title: string; children: React.ReactNode
 }
 
 const css = `
+.lp-pro { display: inline-block; margin-left: 6px; font-family: 'JetBrains Mono', monospace; font-size: 9px; font-weight: 500; letter-spacing: 1px; text-transform: uppercase; color: #0a0a0d; background: #4fffb0; border-radius: 4px; padding: 2px 6px; vertical-align: middle; }
 :root {
   --ink: #0a0a0d; --ink2: #111116; --ink3: #18181f;
   --line: rgba(255,255,255,0.08); --line2: rgba(255,255,255,0.14);

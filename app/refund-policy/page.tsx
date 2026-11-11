@@ -4,7 +4,7 @@ export const metadata = { title: "Refund & Cancellation Policy — Zarbill" };
 
 export default function RefundPolicy() {
   return (
-    <LegalPage title="Refund & Cancellation Policy" updated="5 November 2026">
+    <LegalPage title="Refund & Cancellation Policy" updated="11 November 2026">
       <p>
         This policy explains how subscription payments, cancellations and refunds work
         for Zarbill. It forms part of our <a href="/terms">Terms of Service</a>.
@@ -15,8 +15,9 @@ export default function RefundPolicy() {
         Zarbill is sold as a monthly subscription. The Pro plan is <strong>R99 per month</strong>
         {" "}for accounts in South Africa, and <strong>R300 per month</strong> for accounts
         elsewhere. All subscriptions are charged in South African rand; if your card is in
-        another currency, your bank converts the amount. A free plan is available with up to
-        3 clients and 10 invoices a month, and requires no payment details.
+        another currency, your bank converts the amount. Invoicing itself is free: the free
+        plan includes unlimited invoices, quotes and clients and requires no payment details.
+        The Pro subscription adds statement matching and fee and exchange-rate tracking.
       </p>
       <p>
         Subscriptions renew automatically each month until cancelled. Payments are processed
@@ -32,7 +33,7 @@ export default function RefundPolicy() {
       <ul>
         <li>Cancellation takes effect at the end of your current paid month.</li>
         <li>You keep full access until that date.</li>
-        <li>After that, your account moves to the free plan. Your data is not deleted.</li>
+        <li>After that, your account moves to the free plan. Your data is not deleted, and you can keep creating invoices and quotes.</li>
         <li>There are no cancellation fees and no minimum contract period.</li>
       </ul>
 
@@ -69,8 +70,9 @@ export default function RefundPolicy() {
       <h2>Failed payments</h2>
       <p>
         If a renewal payment fails, we retry and notify you. If payment is not resolved, your
-        account moves to the free plan. Your invoices and clients remain intact and become
-        fully accessible again once payment succeeds.
+        account moves to the free plan. Your invoices, quotes and clients remain intact and you
+        can keep invoicing; Pro features such as statement matching switch back on once
+        payment succeeds.
       </p>
 
       <h2>Price changes</h2>

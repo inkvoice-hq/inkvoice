@@ -23,7 +23,7 @@ export async function assertCanCreate(kind: "clients" | "invoices"): Promise<voi
 
   if (atLimit(plan, kind, count ?? 0)) {
     throw new Error(kind === "invoices"
-      ? "You've used this month's 10 free invoices. Upgrade to Pro for unlimited invoices, or wait until the 1st."
-      : "You've reached the Free plan limit of 3 clients. Upgrade to Pro for unlimited clients.");
+      ? "You've reached your plan's invoice limit for this month."
+      : "You've reached your plan's client limit.");
   }
 }

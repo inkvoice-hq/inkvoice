@@ -67,7 +67,7 @@ export default async function Page() {
             Zarbill does that from a free account.
           </p>
           <Link href="/login?mode=signup&from=generator" className="gen-btn">Create a free account</Link>
-          <span className="gen-fine">Free plan: 10 invoices a month. No card required.</span>
+          <span className="gen-fine">Unlimited invoices and quotes, free. No card required.</span>
         </div>
       </section>
 

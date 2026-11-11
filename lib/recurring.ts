@@ -107,7 +107,7 @@ export async function runRecurring({ dryRun = false } = {}): Promise<JobResult> 
     const { data: tenant } = await admin.from("tenants").select("plan, payment_terms, currency").eq("id", t.tenant_id).maybeSingle();
     const { count } = await admin.from("invoices").select("id", { count: "exact", head: true }).eq("tenant_id", t.tenant_id).gte("created_at", monthStartISO());
     if (atLimit(tenant?.plan, "invoices", count ?? 0)) {
-      r.skipped.push({ invoice: t.number, detail: "free plan monthly invoice limit reached" });
+      r.skipped.push({ invoice: t.number, detail: "plan monthly invoice limit reached" });
       continue;
     }
 

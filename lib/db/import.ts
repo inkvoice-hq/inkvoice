@@ -66,7 +66,7 @@ export async function importClients(rows: ImportClientRow[]): Promise<ImportResu
     if (error) { res.messages.push(error.message); break; }
     res.created += Math.min(500, toInsert.length - i);
   }
-  if (res.limited) res.messages.push(`${res.limited} not imported: the Free plan holds ${max} clients. Upgrade to Pro for unlimited.`);
+  if (res.limited) res.messages.push(`${res.limited} not imported: your plan holds ${max} clients.`);
   return res;
 }
 
@@ -185,7 +185,7 @@ export async function importInvoices(rows: ImportInvoiceRow[], opts: { remind?: 
   }
 
   if (clientsCreated) res.messages.push(`${clientsCreated} new client${clientsCreated === 1 ? "" : "s"} created from the file.`);
-  if (noClient) res.messages.push(`${noClient} invoice${noClient === 1 ? "" : "s"} imported without a client (Free plan client limit).`);
-  if (res.limited) res.messages.push(`${res.limited} not imported: the Free plan allows ${limits.maxInvoices} new invoices a month. Upgrade to Pro for unlimited.`);
+  if (noClient) res.messages.push(`${noClient} invoice${noClient === 1 ? "" : "s"} imported without a client (plan client limit).`);
+  if (res.limited) res.messages.push(`${res.limited} not imported: your plan allows ${limits.maxInvoices} new invoices a month.`);
   return res;
 }

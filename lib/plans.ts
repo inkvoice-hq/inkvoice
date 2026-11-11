@@ -6,8 +6,13 @@ export interface PlanLimits {
   maxInvoices: number;
 }
 
+// Invoicing is free and unlimited on every plan (clients, quotes and invoices).
+// What Pro adds is the money side: statement matching, and fee and
+// exchange-rate tracking (see hasFeature below). The limit machinery stays so
+// a cap can be reintroduced by changing these numbers only.
+
 export const PLAN_LIMITS: Record<PlanId, PlanLimits> = {
-  free:     { maxClients: 3,  maxInvoices: 10 },
+  free:     { maxClients: -1, maxInvoices: -1 },
   pro:      { maxClients: -1, maxInvoices: -1 },
   business: { maxClients: -1, maxInvoices: -1 },
 };
