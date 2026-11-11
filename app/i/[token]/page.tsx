@@ -182,6 +182,7 @@ export default async function HostedInvoicePage(
         )}
 
         <div className="hi-footer">{tenant?.footer_message || "Thank you for your business!"}</div>
+        <div className="zb-mark">Created with <a href="https://zarbill.com/?ref=invoice-pdf" target="_blank" rel="noopener">Zarbill</a> · free invoicing for freelancers</div>
       </div>
 
       <div className="hi-after">

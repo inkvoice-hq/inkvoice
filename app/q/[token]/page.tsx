@@ -167,6 +167,7 @@ export default async function HostedQuotePage({ params }: { params: Promise<{ to
         )}
 
         <div className="hi-footer">{tenant?.footer_message || "Thank you for considering us!"}</div>
+        <div className="zb-mark">Created with <a href="https://zarbill.com/?ref=quote-pdf" target="_blank" rel="noopener">Zarbill</a> · free invoicing for freelancers</div>
       </div>
 
       <div className="hi-after">

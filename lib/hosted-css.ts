@@ -41,6 +41,8 @@ body { background: #eef0f3 !important; }
 .hi-after { max-width: 820px; margin: 22px auto 0; text-align: center; font-size: 13px; color: #555; }
 .hi-after a { color: #111; font-weight: 600; }
 .hi-powered { font-size: 12px; color: #888; margin-top: 10px; }
+.zb-mark { margin-top: 14px; text-align: center; font-size: 9.5px; color: #b5b5b5; letter-spacing: 0.2px; }
+.zb-mark a { color: #9a9a9a; text-decoration: none; }
 .hi-preview { max-width: 820px; margin: 0 auto 14px; background: #fff4d6; color: #8a6200; border-radius: 10px; padding: 10px 14px; font-size: 13px; }
 .hi-decline { background: none; border: none; color: #667085; text-decoration: underline; cursor: pointer; font-size: 13px; font-family: inherit; padding: 12px 6px; }
 .hi-msg { max-width: 820px; margin: 0 auto 14px; border-radius: 10px; padding: 12px 16px; font-size: 14px; }

@@ -743,6 +743,7 @@ export function InvoicesView({
                   </div>
                 )}
                 <div className="ip-footer">{tenant?.footer_message || "Thank you for your business!"}</div>
+                <div className="zb-mark">Created with <a href="https://zarbill.com/?ref=pdf" target="_blank" rel="noopener">Zarbill</a> · free invoicing for freelancers</div>
               </div>
             </div>
           </div>
@@ -888,6 +889,8 @@ a.ink-btn { text-decoration: none; }
 .ip-grand { font-size: 19px; font-weight: 700; border-bottom: none; border-top: 2px solid #111; padding-top: 12px; margin-top: 6px; }
 .ip-notes { margin-top: 32px; padding-top: 20px; border-top: 1px solid #eee; font-size: 12px; color: #666; line-height: 1.7; }
 .ip-footer { margin-top: 40px; text-align: center; font-size: 11px; color: #bbb; font-family: 'JetBrains Mono', monospace; }
+.zb-mark { margin-top: 18px; text-align: center; font-size: 9.5px; color: #b5b5b5; letter-spacing: 0.2px; }
+.zb-mark a { color: #9a9a9a; text-decoration: none; }
 @media print {
   .ink-sidebar, .ink-topbar, .ink-preview-bar { display: none !important; }
   .ink-overlay { position: static; background: #fff; backdrop-filter: none; padding: 0; }
