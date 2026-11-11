@@ -314,15 +314,11 @@ a { color: inherit; text-decoration: none; }
   text-transform: uppercase; color: var(--green); margin: 0 0 22px;
 }
 .lp-hero h1 {
-  font-size: clamp(42px, 5.6vw, 68px); line-height: 1.02; letter-spacing: -2px;
-  font-weight: 800; margin: 0 0 24px;
+  font-family: var(--font-geist-sans, 'Geist'), system-ui, sans-serif;
+  font-size: clamp(40px, 5.2vw, 64px); line-height: 1.05; letter-spacing: -0.035em;
+  font-weight: 600; margin: 0 0 24px;
 }
-.lp-hero h1 em {
-  font-family: 'Instrument Serif', serif; font-style: italic; font-weight: 400;
-  letter-spacing: -1px;
-  background: linear-gradient(100deg, var(--green), var(--cyan));
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-}
+.lp-hero h1 em { font-style: normal; color: var(--green); }
 .lp-sub { font-size: 17px; line-height: 1.7; color: var(--muted); max-width: 30em; margin: 0 0 32px; }
 .lp-cta { display: flex; gap: 12px; flex-wrap: wrap; }
 .lp-btn-primary {
